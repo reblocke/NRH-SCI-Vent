@@ -1,0 +1,423 @@
+---
+title: "NRH Vent Weaning"
+author: "Brian Locke"
+format: html
+embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Data Cleaning
+
+Import needed utilities and the data to a tbl named df 
+
+```{r import data}
+#| label: Pull in Data Extraction Spreadsheet
+#| echo: false
+library(readxl)
+library(ggplot2)
+library(tidyverse) # todo: import each of these individually to avoid the error message
+setwd("/Users/reblocke/Box Sync/Residency Personal Files/Stats/NRH Vent Proj") #[ ] TODO: figure out how to make this a global
+df_orig <- read_excel("data/2023-8-22 NRH SCI FINAL.xlsx")
+```
+
+Drop un-needed columns for current analysis: 
+```{r drop columns}
+df <- df_orig |>
+  select(-PAT_MRN_ID, -`Date of Injury`, -Column1, -Comments)
+#Getting rid of date for now, though might be of use later - would need to figure out how to convert the dates. 
+```
+
+Rename variables to usual R syntax
+```{r rename vars}
+df <- df |>
+  rename(age = Age, 
+         female = Sex,
+         prior_inj_level = `Injury Level reported prior to rehab`,
+         rib_fx = `Rib fractures (Y or N)`,
+         ptx = `Pneumothorax (Y or N)`,
+         chest_tube = `Chest tube (Y or N)`,
+         days_inj_intub = `Days from injury to intubation`,
+         reason_intub = `Reason for Intubation`,
+         days_intub_trach = `Days from intubation to Trach`, 
+         wean_before_trach = `Attempt to wean prior to Trach. (Y or N)`,
+         wean_before_transfer = `Attempt to wean off vent prior to transfer to rehab (Y or N)`,
+         pna_before_transfer = `Did patient develop pneumonia prior to rehab admission (Y or N)`,
+         admit_from_osh = `OSH?`,
+         admit_from = `Admit From`,
+         days_inj_rehab = `Days from injury to admission to rehab`,
+         asia_class_at_rehab = `ASIA Classification at Rehab`,
+         noc_vent_only = `Wean off vent during the day and continue to need nightime ventilation? (Y or N)`,
+         days_adm_to_noc_vent_only = `If yes to previous question, How many days from admission to rehab until they weaned?`,
+         full_wean = `Wean off vent for full 24 hours? (Y or N)`,
+         days_adm_to_full_wean = `If yes to previous question, How many days from admission to rehab until they weaned? 2`,
+         decannulated = `Did patient decanulate (Y or N)`,
+         days_adm_to_decan = `Days from admission to rehab to decanulation`,
+         transfer_icu_rehab = `Did they transfer to ICU from rehab. (Y or N)`,
+         transfer_icu_rehab_resp = `If they transferred to ICU, was cause respirtory?  (Y or N)`,
+         pna_at_rehab = `Did they Develop Pnumonia at rehab? (Y or N)`,
+         days_adm_disch_rehab = `Days to discharge from rehab`,
+         disch_loc = `Discharge Location`,
+         rec_complete = `Complete record`)
+```
+
+See what the current class of each columnn is
+```{r}
+map(df, class)
+```
+
+Define programs to clean variable types: 
+Clean all the numerical values
+Clean all the yes or no binary values 
+
+```{r helpers}
+clean_numerical <- function(value) { 
+  cleaned <- map_int(value)
+  return(cleaned)
+}
+
+# takes the yes/no and makes them boolean
+# works by chopping off everything after the first letter
+clean_yesno <- function(value) { 
+  # These lines turn 'NA' that are in the doc into Un, which starts with U, rather than N = NO"
+  #value <- substring(value, 1, 2) |> 
+  #  recode(`NA` = "Un", 
+  #         `na`="Un")
+  cleaned <- substring(value, 1, 1) |> 
+    recode(Y = TRUE,
+           y = TRUE,
+           N = FALSE,
+           n = FALSE,
+           u = NA,
+           U = NA,
+           )
+  return(cleaned)
+  }
+```
+
+
+Recode all of the columns to their maximally specific data-types
+
+```{r recoding}
+# Recode M's and F's to boolean logic
+df$female <- df$female |> 
+  recode(male = FALSE, M = FALSE, `F` = TRUE)
+
+# TODO: split level of injury logic; for now just left as strings. 
+
+# Change the following columns from (yes/no/unknown) to (TRUE/FALSE/NA)
+df$rib_fx <- clean_yesno(df$rib_fx)
+df$ptx <- clean_yesno(df$ptx)
+df$chest_tube <- clean_yesno(df$chest_tube)
+df$wean_before_trach <- clean_yesno(df$wean_before_trach)
+df$wean_before_transfer <- clean_yesno(df$wean_before_transfer)
+df$pna_before_transfer <- clean_yesno(df$pna_before_transfer)
+df$admit_from_osh <- clean_yesno(df$admit_from_osh)
+df$noc_vent_only <- clean_yesno(df$noc_vent_only)
+df$full_wean <- clean_yesno(df$full_wean)
+df$decannulated <- clean_yesno(df$decannulated)
+df$transfer_icu_rehab <- clean_yesno(df$transfer_icu_rehab)
+df$transfer_icu_rehab_resp <- clean_yesno(df$transfer_icu_rehab_resp)
+df$pna_at_rehab <- clean_yesno(df$pna_at_rehab)
+df$rec_complete <- clean_yesno(df$rec_complete)
+
+#Change the following into numerical variables
+df$days_adm_to_noc_vent_only <- parse_number(df$days_adm_to_noc_vent_only) # note, for this one - there are a few that are 'prior', that are treated as NA... might also consider 0. 
+df$days_adm_to_full_wean <- parse_number(df$days_adm_to_full_wean) #TODO: capture the "1"
+
+```
+
+
+
+TODO: do the categorical variables nee to be explicitly recoded into a categorical variables, as in STATA?  Below is the relevant STATA code
+
+
+encode injurylevelreportedpriortorehab, gen(init_injury_level)
+drop injurylevelreportedpriortorehab
+label variable init_injury_level "Initial Injury Level"
+
+replace asiaclassificationatrehab = strtrim(strupper(asiaclassificationatrehab))
+split asiaclassificationatrehab, gen(level_class)
+replace level_class2 = "AIS" if level_class2 == "AIA"
+encode level_class1, generate(level)
+label variable level "Level of Injury"
+drop level_class1
+generate asia_class_temp = level_class2 + " " + level_class3
+encode asia_class_temp, gen(asia_class)
+drop level_class2 level_class3 asia_class_temp asiaclassificationatrehab
+label variable asia_class "ASIA classification"
+
+generate high_v_low = ""
+//replace high_v_low = "High" if level == "C1"
+replace high_v_low = "High" if level == 1
+replace high_v_low = "High" if level == 2
+replace high_v_low = "High" if level == 3
+replace high_v_low = "Low" if level == 4
+replace high_v_low = "Low" if level == 5
+replace high_v_low = "Low" if level == 6
+encode high_v_low, gen(high_vs_low)
+drop high_v_low
+label variable high_vs_low "High (C4 or above) or Low (C5 or below) Cervical Injury?"
+
+generate init_high_v_low = ""
+replace init_high_v_low = "High" if init_injury_level == 1
+replace init_high_v_low = "High" if init_injury_level == 2
+replace init_high_v_low = "High" if init_injury_level == 3
+replace init_high_v_low = "High" if init_injury_level == 4
+replace init_high_v_low = "Low" if init_injury_level == 5
+replace init_high_v_low = "Low" if init_injury_level == 6
+replace init_high_v_low = "Low" if init_injury_level == 7
+encode init_high_v_low, gen(init_high_vs_low)
+drop init_high_v_low
+label variable init_high_vs_low "Initially Assessed as High (C4 or above) or Low (C5 or below) Cervical Injury?"
+
+gen weaning_outcome_str = ""
+replace weaning_outcome_str = "Fully Vent Dependent" if wean_during_day == 1 
+replace weaning_outcome_str = "Weaned During Day" if wean_during_day == 2
+replace weaning_outcome_str = "Fully Weaned Off" if wean_24hr == 2
+replace weaning_outcome_str = "Decannulated" if decannulate == 2
+label define weaning_label 1 "Fully Vent Dependent" 2 "Weaned During Day" 3 "Fully Weaned Off" 4 "Decannulated"
+encode weaning_outcome_str, label(weaning_label) gen(weaning_outcome)
+drop weaning_outcome_str
+label variable weaning_outcome "Ordinal outcome of weaning attempts"
+
+label define discharge_label 1 "HOME" 2 "HOME W/ HOME HEALTH" 3 "SNF" 4 "LTAC"
+replace dischargelocation = strtrim(strupper(dischargelocation))
+replace dischargelocation = "HOME W/ HOME HEALTH" if dischargelocation == "HOME HEALTH"
+replace dischargelocation = "HOME W/ HOME HEALTH" if dischargelocation == "HH"
+replace dischargelocation = "LTAC" if dischargelocation == "NEURORESTORITIVE THERAPY"
+encode dischargelocation, label(discharge_label) gen(discharge_to)
+label variable discharge_to "Discharge Location?"
+drop dischargelocation
+
+```{r}
+#TODO
+
+```
+
+
+
+Confirm that each column has been forced to the correct columns and compare to the original data
+```{r data cleaning checks}
+
+map(df, class)
+map(df, n_distinct) # summarize number of distinct entries for each
+
+# TODO: ensure that these are all working? compare to original perhaps
+
+```
+
+## Compute summary statistics for the data 
+
+STATA summary statistics
+tab male
+summarize age, detail
+
+//ASIA score? AIS? for cross tabulation.
+//Injury level vs level?
+summarize daysfrominjurytointubation, detail // immediate vs not-immediate as useful dichotomy to evaluate.
+summarize daysfromintubationtotrach, detail
+summarize daysfrominjurytoadmissiontorehab, detail
+summarize days_to_daytime_wean, detail
+summarize days_to_24hr_wean, detail
+summarize daystodischargefromrehab, detail
+tab level asia_class
+tab level init_injury_level
+
+```{r}
+#TODO
+```
+
+## Create tables of the data 
+
+Example STATA code to replicate
+table1_mc, by(level) ///
+vars( ///
+male cat %4.0f \ ///
+age conts %4.0f \ ///
+rib_fx cat %4.0f \ ///
+ptx cat %4.0f \ ///
+chest_tube cat %4.0f \ ///
+init_injury_level cat %4.0f \ ///
+asia_class cat %4.0f \ ///
+daysfrominjurytointubation conts %4.0f \ ///
+wean_pre_trach cat %4.0f \ ///
+daysfromintubationtotrach conts %4.0f \ ///
+wean_pre_trans cat %4.0f \ ///
+daysfrominjurytoadmissiontorehab conts %4.0f \ ///
+pneumonia_prior cat %4.0f \ ///
+wean_during_day cat %4.0f \ ///
+days_to_daytime_wean conts %4.0f \ ///
+wean_24hr cat %4.0f \ ///
+days_to_24hr_wean conts %4.0f \ ///
+decannulate cat %4.0f \ ///
+weaning_outcome cat %4.0f \ ///
+pna_at_rehab cat %4.0f \ ///
+rehab_to_icu cat %4.0f \ ///
+resp_icu_transfer cat %4.0f \ ///
+discharge_to cat %4.0f \ ///
+daystodischargefromrehab conts %4.0f \ ///
+) ///
+percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
+saving("Results and Figures/$S_DATE/All by Level.xlsx", replace)
+
+
+table1_mc, by(asia_class) ///
+vars( ///
+male cat %4.0f \ ///
+age conts %4.0f \ ///
+rib_fx cat %4.0f \ ///
+ptx cat %4.0f \ ///
+chest_tube cat %4.0f \ ///
+init_injury_level cat %4.0f \ ///
+level cat %4.0f \ ///
+asia_class cat %4.0f \ ///
+daysfrominjurytointubation conts %4.0f \ ///
+wean_pre_trach cat %4.0f \ ///
+daysfromintubationtotrach conts %4.0f \ ///
+wean_pre_trans cat %4.0f \ ///
+daysfrominjurytoadmissiontorehab conts %4.0f \ ///
+pneumonia_prior cat %4.0f \ ///
+wean_during_day cat %4.0f \ ///
+days_to_daytime_wean conts %4.0f \ ///
+wean_24hr cat %4.0f \ ///
+days_to_24hr_wean conts %4.0f \ ///
+decannulate cat %4.0f \ ///
+weaning_outcome cat %4.0f \ ///
+pna_at_rehab cat %4.0f \ ///
+rehab_to_icu cat %4.0f \ ///
+resp_icu_transfer cat %4.0f \ ///
+discharge_to cat %4.0f \ ///
+daystodischargefromrehab conts %4.0f \ ///
+) ///
+percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
+saving("Results and Figures/$S_DATE/All by Class.xlsx", replace)
+
+
+tab level init_injury_level
+
+table1_mc, by(init_high_vs_low) ///
+vars( ///
+male cat %4.0f \ ///
+age conts %4.0f \ ///
+rib_fx cat %4.0f \ ///
+ptx cat %4.0f \ ///
+chest_tube cat %4.0f \ ///
+init_injury_level cat %4.0f \ ///
+level cat %4.0f \ ///
+daysfrominjurytointubation conts %4.0f \ ///
+wean_pre_trach cat %4.0f \ ///
+daysfromintubationtotrach conts %4.0f \ ///
+wean_pre_trans cat %4.0f \ ///
+daysfrominjurytoadmissiontorehab conts %4.0f \ ///
+pneumonia_prior cat %4.0f \ ///
+wean_during_day cat %4.0f \ ///
+days_to_daytime_wean conts %4.0f \ ///
+wean_24hr cat %4.0f \ ///
+days_to_24hr_wean conts %4.0f \ ///
+decannulate cat %4.0f \ ///
+weaning_outcome cat %4.0f \ ///
+pna_at_rehab cat %4.0f \ ///
+rehab_to_icu cat %4.0f \ ///
+resp_icu_transfer cat %4.0f \ ///
+discharge_to cat %4.0f \ ///
+daystodischargefromrehab conts %4.0f \ ///
+) ///
+percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
+saving("Results and Figures/$S_DATE/All by Init High vs Low.xlsx", replace)
+
+```{r}
+#TODO
+```
+
+## Regression analyses: 
+
+Example STATA code to replace
+//TODO: integrate info on where they came from
+// levels vs ASIA can differ because ASIA is based on functionality and can evolve.
+// how often do the labels change? do they go up or down? does grade matter? 
+// ASIA -->  true assessment
+// some of the difference is less experienced examiners, some of it is spinal shock.
+// impact of this: would argue we should wait for prognostic assessments and communications to patients.
+ 
+//Exposures: where they came from (UU vs not; SICU vs NCCU vs MICU) ; aggressiveness of weaning
+//Confounders: age, sex, severity, level, time to admission to rehab
+
+//STATA regressino code to replicate
+ologit discharge c.age c.daysfrominjurytoadmissiontorehab ib3.level, or
+ologit discharge c.age c.daysfrominjurytoadmissiontorehab ib1.asia_class, or
+
+ologit discharge i.wean_pre_trach c.age ib3.level, or
+ologit discharge i.wean_pre_trach c.age ib1.asia_class, or
+
+ologit discharge i.wean_pre_trans c.age ib3.level, or
+ologit discharge i.wean_pre_trans c.age ib1.asia_class, or
+
+ologit weaning_outcome c.age c.daysfrominjurytoadmissiontorehab ib3.level, or
+ologit weaning_outcome  c.age c.daysfrominjurytoadmissiontorehab ib1.asia_class, or
+
+ologit weaning_outcome i.wean_pre_trach c.age ib3.level, or
+ologit weaning_outcome i.wean_pre_trach c.age ib1.asia_class, or
+
+ologit weaning_outcome i.wean_pre_trach c.daysfrominjurytoadmissiontorehab c.age i.high_vs_low, or
+
+## Visualizations
+
+General Visualizations
+
+```{r}
+#| label: figure-1
+#| fig-cap: "Timing of Trach and Intubation"
+
+#note; fig-cap will only appear if you give a label option. 
+
+df |> 
+  ggplot(mapping = aes(x = days_inj_intub, 
+                       y = days_intub_trach,
+                       colour = pna_before_transfer)) + 
+  geom_point(alpha = 0.5) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(
+    x = "Days between injury to intubation (log)",
+    y = "Days between intubation and trach (log)", 
+    color = "Pna before transfer?", 
+    title = "Timing of intubation and trach by pneumonia"
+  )
+
+```
+
+
+```{r age-by-los}
+
+df |> 
+  ggplot(mapping = aes(x = age, 
+                       y = days_adm_disch_rehab,
+                       colour = asia_class_at_rehab)) + 
+  scale_y_log10() +
+  geom_point(alpha = 0.5) +
+  labs(
+    x = "Age (years)",
+    y = "Length of Stay (log)", 
+    color = "ASIA scale?", 
+    title = "Age vs LOS at Rehaab") +
+  facet_wrap(~female)
+
+```
+
+TODO:  Sankey Diagrams? 
+
+
+//plan: was there internal referral? Is this a way to make pre-admission weaning comparable?
+//do people who wean faster lower the total length of stay
+// how frequent was pneumonia, controlling for pneumonia that occured before. 
+
+// Outcomes: 
+// Ordinal: decannulate, weaned 24h, wean during day, no wean     [1 limitation of trach not vented: could be placement to facility or TBI]
+// Ordinal: discharge location ****
+// Cox-regression for length of stay.
+
+//Old data: asia class -> likelihood to wean 
+
+//how could you generate useful preliminary data to support an early aggressive weaning protocol. -- implicit comparison to historical rates of weaning?
+//RT flow sheets for data on what is happening. 
