@@ -20,10 +20,9 @@ clear
 use nrh-sci-cleaned
 
 /* Analysis: 
-
 Exposure: Age, Injury (high vs low), Completeness (high vs low) 
 
-Outcome 1: Weaning Outcome Category [raw; then ordinal regression; then K-M]
+Outcome 1: Weaning Outcome Category [raw; then ordinal regression; then Fine-Gray]
 Outcome 2: Discharge Location [raw; then ordinal regression]
 Outcome 3: Death (separate info) [raw; then K-M]
 */
@@ -49,22 +48,37 @@ daysfrominjurytoadmissiontorehab conts %4.0f \ ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
 saving("Results and Figures/$S_DATE/Table 1 - PreRehab.xlsx", replace)
 
+//Overall weaning course
+table1_mc, ///
+vars( ///
+daystodischargefromrehab conts %4.0f \ ///
+wean_during_day bin %4.0f \ ///
+days_to_daytime_wean conts %4.0f \ ///
+wean_24hr bin %4.0f \ ///
+days_to_24hr_wean conts %4.0f \ ///
+decannulate bin %4.0f \ ///
+daysfromadmissiontorehabtodecanu conts %4.0f \ ///
+discharge_to cat %4.0f \ ///
+) ///
+percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
+saving("Results and Figures/$S_DATE/Table aux - Rehab milestones overall.xlsx", replace)
 
 /* 
-Table 2a: Discharge Location by Injury 
+Table: Discharge Location, Weaning Status by Injury 
 */
 
-table1_mc, by(level_and_completeness) ///
+table1_mc, by(high_vs_low) ///
 vars( ///
+weaning_outcome cat %4.0f \ ///
 daystodischargefromrehab conts %4.0f \ ///
 discharge_to cat %4.0f \ ///
 death bin %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
-saving("Results and Figures/$S_DATE/Table 2a - Outcomes by Weaning Cat.xlsx", replace)
+saving("Results and Figures/$S_DATE/Table 2a - Outcomes by Level.xlsx", replace)
 
 /* 
-Table 2b: Discharge Locations by weaning cat
+Table: Discharge Locations by weaning cat
 */
 table1_mc, by(weaning_outcome) ///
 vars( ///
@@ -72,12 +86,63 @@ daystodischargefromrehab conts %4.0f \ ///
 discharge_to cat %4.0f \ ///
 death bin %4.0f \ ///
 ) ///
-percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
+total(before) percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
 saving("Results and Figures/$S_DATE/Table 2b - Outcomes by Weaning Cat.xlsx", replace)
 
 
-/* Figure 2 - Time to weaning outcomes */ 
+/*****************************************************************
+Figure 2- PATIENT-DAY PANEL 
+*****************************************************************/
+preserve
+gen id   = _n
+local nd = 130
+expand `nd'
+bys id : gen day = _n - 1
+
+/* 1) set all in-hospital states first  */
+/* 1) in-hospital states (0–3) */
+gen byte state = 7  
+replace state = 6 if day>=daystodischargefromrehab & weaning_outcome==1  // vent-dep
+
+replace state = 5 if day>=days_to_daytime_wean & day<days_to_24hr_wean
+replace state = 4 if day>=daystodischargefromrehab & weaning_outcome==2  // daytime
+
+replace state = 3 if day>=days_to_24hr_wean  & day<daysfromadmissiontorehabtodecanu
+replace state = 2 if day>=daystodischargefromrehab & weaning_outcome==3  // 24 h off
+
+replace state = 1 if day>=daysfromadmissiontorehabtodecanu & day<daystodischargefromrehab
+replace state = 0 if day>=daystodischargefromrehab & weaning_outcome==4  // decannulated
+
+/* 3) relabel in the correct numeric order */
+label define statelab ///
+  7 "Fully Ventilator Dependent"   ///
+  6 "Discharged Fully Vent. Dependent" ///
+  5 "Daytime Wean" ///
+  4 "Discharged Daytime Wean"  ///  
+  3 "Complete Wean"    ///
+  2 "Discharged Complete Wean"    ///  
+  1 "Decannulated" ///
+  0 "Discharged Decannulated", replace
+label values state statelab
+
+/* 4) now draw your stackedcount */
+stackedcount state day, ///
+    xlabel(0(10)130)                   ///
+    ytitle("Weaning & Discharge Status")        ///
+    xtitle("Day from Rehab. Admission")        ///
+	legend(rows(8) position(9) size(small)) ///
+    scheme(white_w3d)
+
+graph export "Results and Figures/$S_DATE/Fig 2 - stacked_states.png", as(png) replace ///
+    width(2700) height(1500)
+restore
+
+
+
+/* Supplemental Analysis - Time to weaning outcomes */ 
 /*
+Subdistribution Hazards (Fine-Gray) 
+
 Figure 2 a-c: 
 Survival analysis / K-M stratified by low vs high, complete vs incomplete 
 
@@ -189,90 +254,10 @@ graph export "Results and Figures/${S_DATE}/CIF_Decannulation_Level.png", ///
 graph save "CIF_decannulation.gph", replace
 restore
 
-
-//TODO: maybe add boxes around this?
 graph combine CIF_day_wean.gph CIF_24_wean.gph CIF_decannulation.gph, ///
 	cols(1) /// 
 	xsize(5) ysize(10)
-graph export "Results and Figures/$S_DATE/Figure 2 - CIFs for milestones.png", name("Graph") replace
-
-
-/* Stacked Area Chart */ 
-/*  Create patient–day panel in memory  ----------------------------------- */
-preserve
-gen id = _n                       // unique patient id
-local ndays = 181                
-expand `ndays'                    // duplicate each patient `ndays' times
-bys id: gen day = _n - 1          // 0,1,2,... per patient group
-
-/*  Encode mutually exclusive states  ------------------------------------- */
-gen state = 0                                                    // on vent
-replace state = 1 if day >= days_to_daytime_wean      & day < days_to_24hr_wean
-replace state = 2 if day >= days_to_24hr_wean         & day < daysfromadmissiontorehabtodecanu
-replace state = 3 if day >= daysfromadmissiontorehabtodecanu & day < daystodischargefromrehab
-replace state = 4 if day >= daystodischargefromrehab
-
-label define statelab 0 "24h vent" 1 "Daytime wean" 2 "24 h wean" ///
-                      3 "Decannulated" 4 "Discharged"
-label values state statelab
-
-/*  Plot stacked percentages with user command  --------------------------- */
-stackedcount state day,                           ///
-     xlabel(0(10)180) legend(rows(1) position(12)) ///
-     ytitle("Proportion of cohort") xtitle("Day of Rehab Stay")
-
-graph export "Results and Figures/${S_DATE}/stacked_states.png", ///
-             as(png) replace
-restore
-
-
-
-/*****************************************************************
-  PATIENT-DAY PANEL 
-*****************************************************************/
-preserve
-gen id   = _n
-local nd = 130
-expand `nd'
-bys id : gen day = _n - 1
-
-/* 1) set all in-hospital states first  */
-/* 1) in-hospital states (0–3) */
-gen byte state = 7  
-replace state = 6 if day>=daystodischargefromrehab & weaning_outcome==1  // vent-dep
-
-replace state = 5 if day>=days_to_daytime_wean & day<days_to_24hr_wean
-replace state = 4 if day>=daystodischargefromrehab & weaning_outcome==2  // daytime
-
-replace state = 3 if day>=days_to_24hr_wean  & day<daysfromadmissiontorehabtodecanu
-replace state = 2 if day>=daystodischargefromrehab & weaning_outcome==3  // 24 h off
-
-replace state = 1 if day>=daysfromadmissiontorehabtodecanu & day<daystodischargefromrehab
-replace state = 0 if day>=daystodischargefromrehab & weaning_outcome==4  // decannulated
-
-/* 3) relabel in the correct numeric order */
-label define statelab ///
-  7 "Vent. Dependent"   ///
-  6 "D/C: Vent. Dep." ///
-  5 "Daytime Wean" ///
-  4 "D/C: Daytime Wean"  ///  
-  3 "24-hr Wean"    ///
-  2 "D/C: 24-hr Wean"    ///  
-  1 "Decannulated" ///
-  0 "D/C: Decannulated", replace
-label values state statelab
-
-/* 4) now draw your stackedcount */
-stackedcount state day, ///
-    xlabel(0(10)130)                   ///
-    ytitle("Patients per State")        ///
-    xtitle("Day from Rehab. Admissions")        ///
-	legend(rows(8) position(9)) ///
-    scheme(white_w3d)
-
-graph export "stacked_states.png", as(png) replace ///
-    width(2700) height(1500)
-restore
+graph export "Results and Figures/$S_DATE/Supp Figure - CIFs for milestones.png", name("Graph") replace
 
 
 /*
@@ -315,15 +300,13 @@ saving("Results and Figures/$S_DATE/Supplement - Outcome and discharge by Death 
 //Figure 4 Mortality outcomes
 
 /* Survival by Discharge Location */ 
-
-//TODO: change axis to years
 stset time_to_censor_death, failure(death==1)
 sts test discharge_to, logrank 
 
 sts graph, by(discharge_to) tmax(2190) ///
  plotopts(lwidth(thick)) ///
  risktable(0(365)2190, order(1 "LTAC" 2 "SNF" 3 "Home with HH" 4 "Home") size(medlarge) title("Number Eligible", size(medlarge))) ///
- text(0.2 30 "Log-Rank {it:p} = 0.11", placement(e) size(medlarge)) ///
+ text(0.2 30 "Log-Rank {it:p} = 0.04", placement(e) size(medlarge)) ///
  xlabel(0(365)2190, labsize(medlarge)) ///
  ylabel(, labsize(medlarge)) ///
  xtitle("Day From Rehab Admission", size(medlarge)) ///
@@ -341,7 +324,7 @@ sts test weaning_outcome, logrank
 sts graph, by(weaning_outcome) tmax(2190) ///
  plotopts(lwidth(thick)) ///
  risktable(0(365)2190, order(1 "Full Vent Support" 2 "Noct. Vent Support" 3 "No Vent Support" 4 "Decannulated") size(medlarge) title("Number Eligible", size(medlarge))) ///
- text(0.2 30 "Log-Rank {it:p} = 0.11", placement(e) size(medlarge)) ///
+ text(0.2 30 "Log-Rank {it:p} = 0.37", placement(e) size(medlarge)) ///
  xlabel(0(365)2190, labsize(medlarge)) ///
  ylabel(, labsize(medlarge)) ///
  xtitle("Day From Rehab Admission", size(medlarge)) ///
@@ -352,15 +335,10 @@ graph export "Results and Figures/$S_DATE/Supp - KM Death by Wean.png", as(png) 
 graph save "KM_death_by_wean.gph", replace
 stcox ib1.weaning_outcome
 
-stcox ib1.weaning_outcome ib1.discharge_to 
-
-
-graph combine KM_death_by_wean.gph KM_death_by_dispo.gph, ///
+graph combine KM_death_by_dispo.gph KM_death_by_wean.gph, ///
 	cols(2) /// 
 	xsize(10) ysize(5)
 graph export "Results and Figures/$S_DATE/Figure 4 - KMs for death.png", name("Graph") replace
-
-
 
 log close
 
