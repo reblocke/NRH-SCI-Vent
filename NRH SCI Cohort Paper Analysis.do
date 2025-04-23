@@ -1,9 +1,7 @@
 * NRH SCI Cohort Analysis
-* 2023-3-30; Update 9/21/23; Update 4/27/24 Brian Locke
 
 clear
 cd "/Users/blocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/NRH SCI Data" //Mac
-//cd "C:\Users\reblo\Box\Residency Personal Files\Scholarly Work\Locke Research Projects\NRH SCI Data" //PC
 
 program define datetime 
 end
@@ -30,6 +28,8 @@ Outcome 2: Discharge Location [raw; then ordinal regression]
 Outcome 3: Death (separate info) [raw; then K-M]
 */
 
+/* Exclude if partial wean at admit, n=3 */ 
+drop if partial_wean_at_admit == 1
 
 /* Figure 1 manually made by CF */ 
 /* Table 1  - Demographics & Pre-Rehab Course */ 
@@ -45,7 +45,6 @@ outside_hospital bin %4.0f \ ///
 daysfrominjurytointubation conts %4.0f \ ///
 daysfromintubationtotrach conts %4.0f \ ///
 daysfrominjurytoadmissiontorehab conts %4.0f \ ///
-partial_wean_at_admit cat %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
 saving("Results and Figures/$S_DATE/Table 1 - PreRehab.xlsx", replace)
@@ -86,104 +85,194 @@ A: survival rehab-day wean
 B: survival rehab-complete wean
 C: survival rehab to decannulation
 
-
 Note: discharge is a competing risk, thus it might be appropriate to investigate using a fine-gray model . 
 
+There were no inpatient-rehab deaths to be counted as competing events. 
 */ 
 
 /* "Survival" Until Daytime Wean */
-preserve
-drop if partial_wean_at_admit == 2 //exclude those already partially weaned.
-tab high_vs_low wean_during_day
-hist days_to_daytime_wean, by(high_vs_low)
-gen censored_days_to_daytime_wean = days_to_daytime_wean
 
-/* change comment for sensitivity analysis with noninformative censoring (discharge): */ 
-replace censored_days_to_daytime_wean = 180 if missing(days_to_daytime_wean)
-//replace sens_cens_days_to_daytime_wean = daystodischargefromrehab  if missing(days_to_daytime_wean)
-//note("Sensitivity analysis: Non-informative Censoring")
+preserve 
 
-stset censored_days_to_daytime_wean, failure(wean_during_day==1)
-sts test high_vs_low, logrank 
-sts graph, by(high_vs_low) failure tmax(90) ///
- plotopts(lwidth(thick)) ///
- risktable(0(10)90, order(2 "Low Cervical" 1 "High Cervical") size(medlarge) title("Number Eligible", size(medlarge))) ///
- text(0.9 5 "Log-Rank {it:p} = 0.005", placement(e) size(medlarge)) ///
- xlabel(0(10)90, labsize(medlarge)) ///
- ylabel(, labsize(medlarge)) ///
- xtitle("Day of Rehab Stay", size(medlarge)) ///
- ytitle("Portion Weaned During Day", size(medlarge)) ///
- legend(order(1 "High Cervical (C4 & Above)" 2 "Low Cervical (C5 & Below)") position(4) ring(0) rows(2) size(medsmall)) ///
- title("When Daytime Wean Occured", size(large))
-graph export "Results and Figures/$S_DATE/Unadjusted KM Day-wean Level.png", as(png) name("Graph") replace
-graph save "KM_day_wean.gph", replace
-stcox high_vs_low
+// 1 = weaned during day
+// 2 = discharged before weaning (competing event)
+// All other cases (e.g., still in rehab and not weaned): remain missing (censored)
+gen event_type = .
+replace event_type = 1 if wean_during_day == 1
+replace event_type = 2 if daystodischargefromrehab < days_to_daytime_wean & missing(event_type)
+
+gen time_to_event = min(days_to_daytime_wean, daystodischargefromrehab)
+stset time_to_event, failure(event_type == 1)
+stcrreg high_vs_low c.age_decade i.comp_vs_part, compete(event_type == 2)
+
+stcurve, cif at1(high_vs_low=2) at2(high_vs_low=1) ///
+lwidth(thick thick)                                             ///
+	legend(order(1 "Low Cervical (C5 & Below)" 2 "High Cervical (C4 & Above)") position(4) ring(0) rows(2) size(medsmall)) ///
+	title("Daytime Weaning", size(large)) ///
+	xtitle("Day of Rehab Stay", size(medlarge)) ///
+	ytitle("Cumulative Incidence of Daytime Wean", size(medlarge)) ///
+	xlabel(0(10)80, labsize(medlarge)) ///
+	ylabel(0(.1)1, labsize(medlarge)) ///
+	range(0 80) 
+graph export "Results and Figures/$S_DATE/CIF_DayWean_Level.png", as(png) replace
+graph save "CIF_day_wean.gph", replace
 restore
 
 /* "Survival" Until 24H Wean */
 preserve
-drop if partial_wean_at_admit == 2 //exclude those already partially weaned.
-tab high_vs_low wean_24hr
-hist days_to_24hr_wean, by(high_vs_low)
 
-gen censored_days_to_24hr_wean = days_to_24hr_wean
+// 1 = weaned within 24 h
+// 2 = discharged before 24 h wean (competing event)
+// All other cases (e.g., still in rehab and not weaned): remain missing (censored)
+gen event_type = .
+replace event_type = 1 if wean_24hr == 1
+replace event_type = 2 if daystodischargefromrehab < days_to_24hr_wean & missing(event_type)
 
-/* change comment for sensitivity analysis with noninformative censoring (discharge): */ 
-replace censored_days_to_24hr_wean = 180 if missing(days_to_24hr_wean)
-//replace sens_cens_days_to_24hr_wean = daystodischargefromrehab if missing(days_to_24hr_wean)
-//note("Sensitivity analysis: Non-informative Censoring")
+// analysis-time variable = first of the two possible times
+gen time_to_event = min(days_to_24hr_wean, daystodischargefromrehab)
 
-stset censored_days_to_24hr_wean, failure(wean_24hr==1)
-sts test high_vs_low, logrank 
-sts graph, by(high_vs_low) failure tmax(90) ///
- plotopts(lwidth(thick)) ///
- risktable(0(10)90, order(2 "Low Cervical" 1 "High Cervical") title("Number Eligible", size(medlarge)) size(medlarge)) ///
- xlabel(0(10)90, labsize(medlarge)) ///
- ylabel(,labsize(medlarge)) ///
- xtitle("Day of Rehab Stay", size(medlarge)) ///
- ytitle("Portion Weaned 24-Hr", size(medlarge)) ///
- text(0.9 5 "Log-Rank {it:p} = 0.053", placement(e) size(medlarge)) ///
- legend(order(1 "High Cervical (C4 & Above)" 2 "Low Cervical (C5 & Below)") position(4) ring(0) rows(2) size(medsmall)) ///
- title("Time 24-Hr Wean Occured", size(large))
-graph export "Results and Figures/$S_DATE/Unadjusted KM 24-wean Level.png", as(png) name("Graph") replace
-graph save "KM_24_wean.gph", replace
-stcox high_vs_low
+// declare survival data and fit competing-risk model
+stset time_to_event, failure(event_type == 1)
+stcrreg high_vs_low c.age_decade i.comp_vs_part, compete(event_type == 2)
 
+stcurve, cif at1(high_vs_low=2) at2(high_vs_low=1)                  ///
+        lwidth(thick thick)                                         ///
+        legend(order(1 "Low Cervical (C5 & Below)"                  ///
+                     2 "High Cervical (C4 & Above)") position(10)    ///
+               ring(0) rows(2) size(medsmall))                      ///
+        title("24-Hour Weaning", size(large)) ///
+        xtitle("Day of Rehab Stay",   size(medlarge))               ///
+        ytitle("Cumulative Incidence of 24-h Wean", size(medlarge)) ///
+        xlabel(0(10)80, labsize(medlarge))                          ///
+        ylabel(0(.1)1, labsize(medlarge))                           ///
+        range(0 80)    
+graph export "Results and Figures/${S_DATE}/CIF_24hrWean_Level.png", ///
+            as(png) replace
+graph save "CIF_24_wean.gph", replace
 restore
+
 
 /* "Survival" Until Decannulation */ 
-preserve 
-drop if partial_wean_at_admit == 2 //exclude those already partially weaned.
-tab high_vs_low decannulate
-hist daysfromadmissiontorehabtodecanu, by(high_vs_low)
+preserve
 
-gen censored_days_to_decan = daysfromadmissiontorehabtodecanu
-replace censored_days_to_decan = 180 if missing(daysfromadmissiontorehabtodecanu)
+// 1 = decannulated
+// 2 = discharged before decannulation (competing event)
+// All other cases remain missing (censored)
+gen event_type = .
+replace event_type = 1 if decannulate == 1
+replace event_type = 2 if daystodischargefromrehab < daysfromadmissiontorehabtodecanu & missing(event_type)
 
-stset censored_days_to_decan, failure(decannulate==1)
-sts test high_vs_low, logrank 
-sts graph, by(high_vs_low) failure tmax(90) ///
- plotopts(lwidth(thick)) ///
- text(0.7 5 "Log-Rank {it:p} = 0.009", placement(e) size(medlarge)) ///
- risktable(0(10)90, order(2 "Low Cervical" 1 "High Cervical") size(medlarge) title("Number Eligible", size(medlarge))) ///
- xlabel(0(10)90, labsize(medlarge)) ///
- ylabel(,labsize(medlarge)) /// 
- xtitle("Day of Rehab Stay", size(medlarge)) ///
- ytitle("Portion Decannulated", size(medlarge)) ///
- legend(order(1 "High Cervical (C4 & Above)" 2 "Low Cervical (C5 & Below)") position(10) ring(0) rows(2) size(medsmall)) ///
- text(0.03 30 "*One patient with a high CSCI decannulated at day 179", placement(e) size(small)) ///
- title("When Decannulation Occured", size(large)) 
-graph export "Results and Figures/$S_DATE/Unadjusted KM Decannulation.png", as(png) name("Graph") replace
-graph save "KM_decannulation.gph", replace
-stcox high_vs_low
+// analysis-time variable = sooner of decannulation or discharge
+gen time_to_event = min(daysfromadmissiontorehabtodecanu, daystodischargefromrehab)
+
+// declare survival data and fit competing-risk model
+stset  time_to_event, failure(event_type == 1)
+stcrreg high_vs_low c.age_decade i.comp_vs_part, compete(event_type == 2)
+
+// cumulative-incidence plot, same styling
+stcurve, cif at1(high_vs_low=2) at2(high_vs_low=1)                  ///
+        lwidth(thick thick)                                         ///
+        legend(order(1 "Low Cervical (C5 & Below)"                  ///
+                     2 "High Cervical (C4 & Above)") position(10)    ///
+               ring(0) rows(2) size(medsmall))                      ///
+        title("Tracheostomy Decannulation", size(large)) ///
+        xtitle("Day of Rehab Stay", size(medlarge))                 ///
+        ytitle("Cumulative Incidence of Decannulation", size(medlarge)) ///
+        xlabel(0(10)80, labsize(medlarge))                          ///
+        ylabel(0(.1)1, labsize(medlarge))                           ///
+		text(0.7 0 "*One patient with a high CSCI decannulated at day 179", placement(e) size(small)) ///
+        range(0 80)
+
+// export figure
+graph export "Results and Figures/${S_DATE}/CIF_Decannulation_Level.png", ///
+            as(png) replace
+graph save "CIF_decannulation.gph", replace
 restore
 
+
 //TODO: maybe add boxes around this?
-graph combine KM_day_wean.gph KM_24_wean.gph KM_decannulation.gph, ///
+graph combine CIF_day_wean.gph CIF_24_wean.gph CIF_decannulation.gph, ///
 	cols(1) /// 
 	xsize(5) ysize(10)
-graph export "Results and Figures/$S_DATE/Figure 2 - KMs for milestones.png", name("Graph") replace
+graph export "Results and Figures/$S_DATE/Figure 2 - CIFs for milestones.png", name("Graph") replace
 
+
+/* Stacked Area Chart */ 
+/*  Create patient–day panel in memory  ----------------------------------- */
+preserve
+gen id = _n                       // unique patient id
+local ndays = 181                
+expand `ndays'                    // duplicate each patient `ndays' times
+bys id: gen day = _n - 1          // 0,1,2,... per patient group
+
+/*  Encode mutually exclusive states  ------------------------------------- */
+gen state = 0                                                    // on vent
+replace state = 1 if day >= days_to_daytime_wean      & day < days_to_24hr_wean
+replace state = 2 if day >= days_to_24hr_wean         & day < daysfromadmissiontorehabtodecanu
+replace state = 3 if day >= daysfromadmissiontorehabtodecanu & day < daystodischargefromrehab
+replace state = 4 if day >= daystodischargefromrehab
+
+label define statelab 0 "24h vent" 1 "Daytime wean" 2 "24 h wean" ///
+                      3 "Decannulated" 4 "Discharged"
+label values state statelab
+
+/*  Plot stacked percentages with user command  --------------------------- */
+stackedcount state day,                           ///
+     xlabel(0(10)180) legend(rows(1) position(12)) ///
+     ytitle("Proportion of cohort") xtitle("Day of Rehab Stay")
+
+graph export "Results and Figures/${S_DATE}/stacked_states.png", ///
+             as(png) replace
+restore
+
+
+
+/*****************************************************************
+  PATIENT-DAY PANEL 
+*****************************************************************/
+preserve
+gen id   = _n
+local nd = 130
+expand `nd'
+bys id : gen day = _n - 1
+
+/* 1) set all in-hospital states first  */
+/* 1) in-hospital states (0–3) */
+gen byte state = 7  
+replace state = 6 if day>=daystodischargefromrehab & weaning_outcome==1  // vent-dep
+
+replace state = 5 if day>=days_to_daytime_wean & day<days_to_24hr_wean
+replace state = 4 if day>=daystodischargefromrehab & weaning_outcome==2  // daytime
+
+replace state = 3 if day>=days_to_24hr_wean  & day<daysfromadmissiontorehabtodecanu
+replace state = 2 if day>=daystodischargefromrehab & weaning_outcome==3  // 24 h off
+
+replace state = 1 if day>=daysfromadmissiontorehabtodecanu & day<daystodischargefromrehab
+replace state = 0 if day>=daystodischargefromrehab & weaning_outcome==4  // decannulated
+
+/* 3) relabel in the correct numeric order */
+label define statelab ///
+  7 "Vent. Dependent"   ///
+  6 "D/C: Vent. Dep." ///
+  5 "Daytime Wean" ///
+  4 "D/C: Daytime Wean"  ///  
+  3 "24-hr Wean"    ///
+  2 "D/C: 24-hr Wean"    ///  
+  1 "Decannulated" ///
+  0 "D/C: Decannulated", replace
+label values state statelab
+
+/* 4) now draw your stackedcount */
+stackedcount state day, ///
+    xlabel(0(10)130)                   ///
+    ytitle("Patients per State")        ///
+    xtitle("Day from Rehab. Admissions")        ///
+	legend(rows(8) position(9)) ///
+    scheme(white_w3d)
+
+graph export "stacked_states.png", as(png) replace ///
+    width(2700) height(1500)
+restore
 
 
 /*

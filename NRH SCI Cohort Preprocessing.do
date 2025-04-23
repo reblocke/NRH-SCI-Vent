@@ -1,8 +1,7 @@
 //NRH SCI Cohort Preprocessing
 
 clear
-cd "/Users/blocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/NRH SCI Data/" //Mac
-//cd "C:\Users\reblo\Box\Residency Personal Files\Scholarly Work\Locke Research Projects\NRH SCI Data" //PC
+cd "/Users/blocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/NRH SCI Data/" 
 
 program define datetime 
 end
@@ -259,6 +258,8 @@ label variable date_discharge "Date of Discharge"
 gen date_admit = injury_date + daysfrominjurytoadmissiontorehab
 format date_admit %td
 label variable date_admit "Date of Admit"
+
+/* Old? */ 
 
 gen time_to_censor_death = date_death - date_admit if death == 1
 replace time_to_censor_death = date("09/30/2023", "MDY") - date_admit if death == 0
