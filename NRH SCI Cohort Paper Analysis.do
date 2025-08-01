@@ -139,7 +139,7 @@ restore
 
 
 
-/* Supplemental Analysis - Time to weaning outcomes */ 
+/* Supplemental Figure - Time to weaning outcomes */ 
 /*
 Subdistribution Hazards (Fine-Gray) 
 
@@ -260,6 +260,7 @@ graph combine CIF_day_wean.gph CIF_24_wean.gph CIF_decannulation.gph, ///
 graph export "Results and Figures/$S_DATE/Supp Figure - CIFs for milestones.png", name("Graph") replace
 
 
+
 /*
 Figure 3: 
 Coefplot of regression model: ordinal logit [level of weaning] with predictors: high_v_low, comp_v_inc, c.age
@@ -274,11 +275,11 @@ coefplot ord_weaning_outcome_reg, bylabel("Weaning Outcome") || ord_discharge_to
 graph export "Results and Figures/$S_DATE/Fig 3 - Ordinal Regressions.png", as(png) name("Graph") replace
 
 
-/* Supplemental Table - does weaning status influence discharge location? */ 
+/* Supplemental Figure - does weaning status influence discharge location? */ 
 
 ologit discharge_to ib1.weaning_outcome c.age, or
 estimates store age_adj_wean_to_discharge
-coefplot age_adj_wean_to_discharge, eform xscale(log) xline(1) xlabel(0.061 0.125 0.25 0.5 1 2 4 8 16 32 64 128) xscale(extend) xtitle("Odds Ratio of a higher level of care (LOC) discharge location" , size(small)) yscale(extend) ciopts(recast(rcap) lwidth(thick)) mlabel(string(@b,"%9.2f") + " [ " + string(@ll,"%9.2f") + " - " + string(@ul,"%9.2f") + " ] " + cond(@pval<.001, "***", cond(@pval<.01, "**", cond(@pval<.05, "*", "")))) mlabsize(medsmall) mlabposition(12) mlabgap(*1) scheme(white_tableau) text(5 0.11 "Favors Higher" "LOC Discharge" 5 9.9 "Favors Lower" "LOC Discharge", size(small) color(gs9)) headings(age = "{bf:Age} (per add'n year)" 2.weaning_outcome = "{bf:Weaning Outcome?} (vs 24h Vent)")
+coefplot age_adj_wean_to_discharge, eform xscale(log) xline(1) xlabel(0.061 0.125 0.25 0.5 1 2 4 8 16 32 64 128) xscale(extend) xtitle("Odds Ratio of a lower level of care (LOC) discharge location" , size(small)) yscale(extend) ciopts(recast(rcap) lwidth(thick)) mlabel(string(@b,"%9.2f") + " [ " + string(@ll,"%9.2f") + " - " + string(@ul,"%9.2f") + " ] " + cond(@pval<.001, "***", cond(@pval<.01, "**", cond(@pval<.05, "*", "")))) mlabsize(medsmall) mlabposition(12) mlabgap(*1) scheme(white_tableau) text(5 0.11 "Favors Higher" "LOC Discharge" 5 9.9 "Favors Lower" "LOC Discharge", size(small) color(gs9)) headings(age = "{bf:Age} (per add'n year)" 2.weaning_outcome = "{bf:Weaning Outcome?} (vs 24h Vent)")
 graph export "Results and Figures/$S_DATE/Supplement - Dispo by Weaning Status  Regression.png", as(png) name("Graph") replace
 
 
