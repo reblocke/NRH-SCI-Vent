@@ -175,13 +175,13 @@ replace weanoffventforfull24hoursyorn = strtrim(strupper(weanoffventforfull24hou
 replace weanoffventforfull24hoursyorn = "N" if weanoffventforfull24hoursyorn == "N - BIPAP AT NIGHT"
 encode weanoffventforfull24hoursyorn, gen(wean_24hr) label(binary_label)
 drop weanoffventforfull24hoursyorn
-label variable wean_24hr "Able to wean for 24hr?"
+label variable wean_24hr "Liberated from IMV? (24hr/d)"
 
 replace v23 = strtrim(v23)
 replace v23 = "1" if v23 == "1 weaned off CPAP at night"
 destring v23, gen(days_to_24hr_wean) 
 drop v23
-label variable days_to_24hr_wean "Days until weaned day and night"
+label variable days_to_24hr_wean "Days until liberated from IMV"
 
 replace didpatientdecanulateyorn = strtrim(strupper(didpatientdecanulateyorn))
 replace didpatientdecanulateyorn = "N" if didpatientdecanulateyorn == "N."
@@ -192,9 +192,9 @@ drop didpatientdecanulateyorn
 gen weaning_outcome_str = ""
 replace weaning_outcome_str = "Fully Vent Dependent" if wean_during_day == 0 
 replace weaning_outcome_str = "Weaned During Day" if wean_during_day == 1
-replace weaning_outcome_str = "Fully Weaned Off" if wean_24hr == 1
+replace weaning_outcome_str = "Liberated from IMV" if wean_24hr == 1
 replace weaning_outcome_str = "Decannulated" if decannulate == 1
-label define weaning_label 1 "Fully Vent Dependent" 2 "Weaned During Day" 3 "Fully Weaned Off" 4 "Decannulated"
+label define weaning_label 1 "Fully Vent Dependent" 2 "Weaned During Day" 3 "Liberated from IMV" 4 "Decannulated"
 encode weaning_outcome_str, label(weaning_label) gen(weaning_outcome)
 drop weaning_outcome_str
 label variable weaning_outcome "Weaning outcome at rehab discharge"
