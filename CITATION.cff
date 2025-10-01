@@ -1,0 +1,70 @@
+cff-version: 1.2.0
+message: >-
+  If you use this repository, please cite the software. When the paper is accepted,
+  prefer citing the article and the archived code release DOI that matches it.
+title: NRH-SCI-Vent
+type: software
+authors:
+  - family-names: Fenger
+    given-names: Casey
+    orcid: https://orcid.org/0009-0004-4855-733
+  - family-names: Locke
+    given-names: Brian W.
+    orcid: https://orcid.org/0000-0002-3588-5238
+  - family-names: Barker
+    given-names: James
+  - family-names: Tang
+    given-names: William
+  - family-names: Creveling
+    given-names: Polly
+  - family-names: Foster-Palmer
+    given-names: Stormy
+  - family-names: Flis
+    given-names: Alexandra
+  - family-names: Park
+    given-names: Kevin
+  - family-names: Rosenbluth
+    given-names: Jeffrey
+  - family-names: Brown
+    given-names: Jeanette P.
+    orcid: https://orcid.org/0009-0009-8407-4034
+repository-code: "https://github.com/reblocke/NRH-SCI-Vent"
+license: MIT
+keywords:
+  - spinal cord injury
+  - ventilator weaning
+  - tracheostomy
+  - rehabilitation
+  - Stata
+version: "v0.1.0+commit.b437708"
+date-released: "2025-09-29"
+identifiers:
+  - type: url
+    value: https://journal.chestnet.org/article/S0012-3692(23)05014-6/abstract
+preferred-citation:
+  type: article
+  title: "Predictors of Ventilator Weaning and Discharge Outcomes in Cervical Spinal Cord Injury Subjects: A Retrospective Analysis"
+  authors:
+    - family-names: Fenger
+      given-names: Casey
+    - family-names: Locke
+      given-names: Brian W.
+    - family-names: Barker
+      given-names: James
+    - family-names: Tang
+      given-names: William
+    - family-names: Creveling
+      given-names: Polly
+    - family-names: Foster-Palmer
+      given-names: Stormy
+    - family-names: Flis
+      given-names: Alexandra
+    - family-names: Park
+      given-names: Kevin
+    - family-names: Rosenbluth
+      given-names: Jeffrey
+    - family-names: Brown
+      given-names: Jeanette P.
+  year: 2025
+  journal: "(under review)"
+  notes: "Use this placeholder until a DOI and journal details are available."
