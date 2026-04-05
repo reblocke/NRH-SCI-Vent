@@ -1,7 +1,9 @@
 cff-version: 1.2.0
 message: >-
-  If you use this repository, please cite the software. When the paper is accepted,
-  prefer citing the article and the archived code release DOI that matches it.
+  If you use this repository, please cite the software. The frozen manuscript
+  snapshot is GitHub release v0.1.0. When the paper is accepted and an archive
+  DOI has been minted for that release, prefer citing the article and the
+  archived code release DOI that matches it.
 title: NRH-SCI-Vent
 type: software
 authors:
@@ -36,9 +38,11 @@ keywords:
   - tracheostomy
   - rehabilitation
   - Stata
-version: "v0.1.0+commit.b437708"
-date-released: "2025-09-29"
+version: "v0.1.0"
+date-released: "2026-04-04"
 identifiers:
+  - type: url
+    value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0
   - type: url
     value: https://journal.chestnet.org/article/S0012-3692(23)05014-6/abstract
 preferred-citation:

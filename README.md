@@ -4,13 +4,14 @@
 
 **Links & IDs**
 - Repository: https://github.com/reblocke/NRH-SCI-Vent
+- Manuscript snapshot release: [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
 - Latest analysis commit used for the manuscript: `b437708ea58aba0f4da0afe73e54f64de423b7d2` (2025‑09‑29)
 - Manuscript: *in review* (no DOI yet). Working title: **Predictors of Ventilator Weaning and Discharge Outcomes in Cervical Spinal Cord Injury Subjects: A Retrospective Analysis**.
 - Related abstract (CHEST 2023): *Just keep trying: Prior attempts at weaning do not determine eventual liberation from tracheostomy and mechanical ventilation in high-level spinal cord patients.*
 - Statistical software: **Stata 18** (StataCorp, College Station, TX).
 
 ## Cite this work
-Please cite the **software** until the article is accepted and has a DOI. See [`CITATION.cff`](./CITATION.cff) for a citation you can paste into your reference manager. When the paper is published, prefer citing the article and include the exact code release DOI archived for that paper version.
+Please cite the **software** until the article is accepted and has a DOI. The frozen manuscript snapshot is GitHub release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0), which points to the exact analysis commit documented above. See [`CITATION.cff`](./CITATION.cff) for citation metadata you can paste into your reference manager. When the paper is published and an archive DOI has been minted for this release, prefer citing the article and that exact archived code release DOI.
 
 ## Quick start (reproduce the main results)
 
