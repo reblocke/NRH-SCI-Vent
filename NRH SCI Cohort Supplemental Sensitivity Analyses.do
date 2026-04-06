@@ -189,6 +189,10 @@ local analytic_n = r(N)
 quietly levelsof level, local(levels_obs)
 local c8_observed = strpos(" `levels_obs' ", " 8 ")
 local level_note "Analytic cohort contains observed C2-C7 only; the C7-C8 stratum contained observed C7 cases only."
+local small_sample_note "Small-sample support diagnostics are heuristic and summarize how much information each model has relative to its complexity; they should be read as caution flags rather than proof of overfitting."
+local figure_note_levels "Supplemental sensitivity analysis. Points show observed proportions with 95% confidence intervals. `level_note'"
+local figure_note_age_raw "Supplemental sensitivity analysis. Marker jitter is visual only."
+local figure_note_age_model "Supplemental sensitivity analysis. Curves are model-based and should be interpreted cautiously given small subgroup counts."
 
 di as txt "Analytic N after exclusion: `analytic_n'"
 di as txt "Observed exact rehab injury levels: `levels_obs'"
@@ -412,19 +416,19 @@ else {
     post `post_level_notes' ("C8 was not observed in the cleaned analytic dataset.")
     post `post_level_notes' ("`level_note'")
 }
-post `post_level_notes' ("These outputs are descriptive / exploratory sensitivity analyses and do not replace the main paper analyses.")
+post `post_level_notes' ("These descriptive summaries are supplemental sensitivity analyses and should be interpreted alongside, not instead of, the main paper analyses.")
 postclose `post_level_notes'
 
 preserve
 use `exact_level_tbl', clear
 export excel using "`results_dir'/Supplemental Table - Milestone Rates by Injury Level.xlsx", ///
-    sheet("Exact level") firstrow(variables) replace
+    sheet("Exact injury level") firstrow(variables) replace
 restore
 
 preserve
 use `grouped_level_tbl', clear
 export excel using "`results_dir'/Supplemental Table - Milestone Rates by Injury Level.xlsx", ///
-    sheet("Grouped level") firstrow(variables) sheetreplace
+    sheet("Grouped injury level") firstrow(variables) sheetreplace
 restore
 
 preserve
@@ -448,7 +452,7 @@ twoway ///
     yscale(range(0 100)) ///
     xtitle("Finer injury level group", size(medlarge)) ///
     ytitle("Achieved milestone (%)", size(medlarge)) ///
-    title("Daytime wean", size(large)) ///
+    title("Daytime ventilator wean", size(large)) ///
     legend(off) ///
     scheme(s1mono) ///
     name(gr_day_group4, replace)
@@ -462,7 +466,7 @@ twoway ///
     yscale(range(0 100)) ///
     xtitle("Finer injury level group", size(medlarge)) ///
     ytitle("Achieved milestone (%)", size(medlarge)) ///
-    title("Liberated from IMV", size(large)) ///
+    title("Liberation from invasive ventilation", size(large)) ///
     legend(off) ///
     scheme(s1mono) ///
     name(gr_imv_group4, replace)
@@ -483,7 +487,7 @@ twoway ///
 
 graph combine gr_day_group4 gr_imv_group4 gr_dec_group4, ///
     cols(1) xsize(6) ysize(10) ///
-    note("Exploratory sensitivity analysis. `level_note'", size(vsmall)) ///
+    note("`figure_note_levels'", size(vsmall)) ///
     imargin(small) ///
     name(gr_group4_milestones, replace)
 
@@ -514,7 +518,7 @@ if _rc {
     post `post_ordered_model' ("Weaning outcome ordered-level sensitivity") ("ologit") ///
         ("<model omitted>") ("OR") (`analytic_n') (.) (.) (.) (.) ("`fail_msg'")
     post `post_ordered_diag' ("Weaning outcome ordered-level sensitivity") ("ologit") ///
-        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High") ("`fail_msg'")
+        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High concern") ("`fail_msg'")
 }
 else {
     quietly _post_estimation_terms, postname(`post_ordered_model') ///
@@ -540,12 +544,12 @@ else {
         local heuristic_ratio = `min_cat' / `k_slopes'
     }
 
-    local overfit_flag "Low"
+    local overfit_flag "Lower concern"
     if `heuristic_ratio' < 10 {
-        local overfit_flag "Moderate"
+        local overfit_flag "Moderate concern"
     }
     if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-        local overfit_flag "High"
+        local overfit_flag "High concern"
     }
 
     post `post_ordered_diag' ("Weaning outcome ordered-level sensitivity") ("ologit") ///
@@ -562,7 +566,7 @@ if _rc {
     post `post_ordered_model' ("Discharge ordered-level sensitivity") ("ologit") ///
         ("<model omitted>") ("OR") (`analytic_n') (.) (.) (.) (.) ("`fail_msg'")
     post `post_ordered_diag' ("Discharge ordered-level sensitivity") ("ologit") ///
-        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High") ("`fail_msg'")
+        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High concern") ("`fail_msg'")
 }
 else {
     quietly _post_estimation_terms, postname(`post_ordered_model') ///
@@ -588,12 +592,12 @@ else {
         local heuristic_ratio = `min_cat' / `k_slopes'
     }
 
-    local overfit_flag "Low"
+    local overfit_flag "Lower concern"
     if `heuristic_ratio' < 10 {
-        local overfit_flag "Moderate"
+        local overfit_flag "Moderate concern"
     }
     if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-        local overfit_flag "High"
+        local overfit_flag "High concern"
     }
 
     post `post_ordered_diag' ("Discharge ordered-level sensitivity") ("ologit") ///
@@ -646,7 +650,7 @@ foreach milestone of local milestones {
         post `post_ordered_model' ("`model_name'") ("stcrreg") ///
             ("<model omitted>") ("SHR") (`model_n') (.) (.) (.) (.) ("`fail_msg'")
         post `post_ordered_diag' ("`model_name'") ("stcrreg") ///
-            (`model_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High") ("`fail_msg'")
+            (`model_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High concern") ("`fail_msg'")
         restore
         continue
     }
@@ -663,7 +667,7 @@ foreach milestone of local milestones {
         local compete = r(N)
         post `post_ordered_diag' ("`model_name'") ("stcrreg") ///
             (`model_n') (.) (.) (.) (.) (`failures') (`compete') ///
-            (.) (.) (.) (.) ("High") ("`fail_msg'")
+            (.) (.) (.) (.) ("High concern") ("`fail_msg'")
         restore
         continue
     }
@@ -686,12 +690,12 @@ foreach milestone of local milestones {
         local heuristic_ratio = `failures' / `k_slopes'
     }
 
-    local overfit_flag "Low"
+    local overfit_flag "Lower concern"
     if `heuristic_ratio' < 10 {
-        local overfit_flag "Moderate"
+        local overfit_flag "Moderate concern"
     }
     if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-        local overfit_flag "High"
+        local overfit_flag "High concern"
     }
 
     post `post_ordered_diag' ("`model_name'") ("stcrreg") ///
@@ -703,9 +707,10 @@ foreach milestone of local milestones {
     restore
 }
 
-post `post_ordered_notes' ("Ordered-level models treat level as an exploratory ordered sensitivity term; they do not imply proven linearity.")
+post `post_ordered_notes' ("Ordered-level models treat injury level as an ordered exploratory sensitivity term; they do not imply proven linearity.")
 post `post_ordered_notes' ("Fine-Gray sensitivity models mirror the paper's competing-risk structure but replace i.high_vs_low with c.level.")
-post `post_ordered_notes' ("Overfitting diagnostics are heuristic only: ordinal models use min category count / k_slopes; Fine-Gray models use failures / k_slopes.")
+post `post_ordered_notes' ("`small_sample_note'")
+post `post_ordered_notes' ("For ordered-logit models, support is summarized as the smallest outcome-category count divided by the number of free slope parameters; for Fine-Gray models, support is summarized as the number of target failures divided by the number of free slope parameters.")
 postclose `post_ordered_model'
 postclose `post_ordered_diag'
 postclose `post_ordered_notes'
@@ -714,14 +719,14 @@ preserve
 use `ordered_model_tbl', clear
 keep if family == "ologit"
 export excel using "`results_dir'/Supplemental Table - Ordered Level Sensitivity Models.xlsx", ///
-    sheet("Ordinal models") firstrow(variables) replace
+    sheet("Ordered-logit models") firstrow(variables) replace
 restore
 
 preserve
 use `ordered_model_tbl', clear
 keep if family == "stcrreg"
 export excel using "`results_dir'/Supplemental Table - Ordered Level Sensitivity Models.xlsx", ///
-    sheet("Milestone timing") firstrow(variables) sheetreplace
+    sheet("Fine-Gray models") firstrow(variables) sheetreplace
 restore
 
 preserve
@@ -756,7 +761,7 @@ if _rc {
     post `post_age_model' ("Milestone-adjusted discharge ordinal model") ("ologit") ///
         ("<model omitted>") ("OR") (`analytic_n') (.) (.) (.) (.) ("`fail_msg'")
     post `post_age_diag' ("Milestone-adjusted discharge ordinal model") ("ologit") ///
-        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High") ("`fail_msg'")
+        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High concern") ("`fail_msg'")
 }
 else {
     quietly _post_estimation_terms, postname(`post_age_model') ///
@@ -782,12 +787,12 @@ else {
         local heuristic_ratio = `min_cat' / `k_slopes'
     }
 
-    local overfit_flag "Low"
+    local overfit_flag "Lower concern"
     if `heuristic_ratio' < 10 {
-        local overfit_flag "Moderate"
+        local overfit_flag "Moderate concern"
     }
     if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-        local overfit_flag "High"
+        local overfit_flag "High concern"
     }
 
     post `post_age_diag' ("Milestone-adjusted discharge ordinal model") ("ologit") ///
@@ -807,7 +812,7 @@ if _rc {
     post `post_age_model' ("Age x decannulation home-any model") ("logit") ///
         ("<model omitted>") ("OR") (`analytic_n') (.) (.) (.) (.) ("`interaction_status'")
     post `post_age_diag' ("Age x decannulation home-any model") ("logit") ///
-        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High") ("`interaction_status'")
+        (`analytic_n') (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) (.) ("High concern") ("`interaction_status'")
 }
 else {
     local interaction_fit_ok 1
@@ -857,12 +862,12 @@ else {
         estimates restore age_home_interaction_model
     }
 
-    local overfit_flag "Low"
+    local overfit_flag "Lower concern"
     if `heuristic_ratio' < 10 {
-        local overfit_flag "Moderate"
+        local overfit_flag "Moderate concern"
     }
     if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-        local overfit_flag "High"
+        local overfit_flag "High concern"
     }
 
     post `post_age_diag' ("Age x decannulation home-any model") ("logit") ///
@@ -940,14 +945,14 @@ if `hh_home' == 0 | `hh_fac' == 0 | `ll_home' == 0 | `ll_fac' == 0 local subgrou
 if `comp_home' == 0 | `comp_fac' == 0 | `part_home' == 0 | `part_fac' == 0 local subgroup_model_ok 0
 
 if !`subgroup_model_ok' {
-    local subgroup_msg "Model omitted due quasi-complete separation / subgroup sparsity."
+    local subgroup_msg "Model omitted because subgroup cell counts were too sparse, raising concern for quasi-complete separation."
     di as txt "`subgroup_msg'"
     post `post_decann_model' ("Decannulated-only home-any model") ("logit") ///
         ("<model omitted>") ("OR") (`decann_n') (.) (.) (.) (.) ("`subgroup_msg'")
     post `post_age_diag' ("Decannulated-only home-any model") ("logit") ///
         (`decann_n') (`decann_home_n') (`decann_fac_n') (.) (.) (.) (.) ///
-        (.) (.) (.) (.) (.) ("High") ("`subgroup_msg'")
-    post `post_decann_notes' ("Descriptive / exploratory only due small subgroup size.")
+        (.) (.) (.) (.) (.) ("High concern") ("`subgroup_msg'")
+    post `post_decann_notes' ("Interpret this subgroup descriptively only because the available information is limited.")
     post `post_decann_notes' ("`subgroup_msg'")
 }
 else {
@@ -959,8 +964,8 @@ else {
             ("<model omitted>") ("OR") (`decann_n') (.) (.) (.) (.) ("`subgroup_msg'")
         post `post_age_diag' ("Decannulated-only home-any model") ("logit") ///
             (`decann_n') (`decann_home_n') (`decann_fac_n') (.) (.) (.) (.) ///
-            (.) (.) (.) (.) (.) ("High") ("`subgroup_msg'")
-        post `post_decann_notes' ("Descriptive / exploratory only due model instability.")
+            (.) (.) (.) (.) (.) ("High concern") ("`subgroup_msg'")
+        post `post_decann_notes' ("Interpret this subgroup descriptively only because the fitted model was unstable.")
     }
     else {
         quietly _post_estimation_terms, postname(`post_decann_model') ///
@@ -976,25 +981,26 @@ else {
             local heuristic_ratio = min(`decann_home_n', `decann_fac_n') / `k_slopes'
         }
 
-        local overfit_flag "Low"
+        local overfit_flag "Lower concern"
         if `heuristic_ratio' < 10 {
-            local overfit_flag "Moderate"
+            local overfit_flag "Moderate concern"
         }
         if `heuristic_ratio' < 5 | `omitted' > 0 | `converged' != 1 {
-            local overfit_flag "High"
+            local overfit_flag "High concern"
         }
 
         post `post_age_diag' ("Decannulated-only home-any model") ("logit") ///
             (`decann_n') (`decann_home_n') (`decann_fac_n') (.) (.) (.) (.) ///
             (`k_slopes') (`omitted') (`converged') (`heuristic_ratio') (.) ///
             ("`overfit_flag'") ("ok")
-        post `post_decann_notes' ("Descriptive / exploratory only due small subgroup size.")
+        post `post_decann_notes' ("Interpret this subgroup descriptively only because the available information is limited.")
     }
 }
 
-post `post_age_notes' ("These age and discharge models are exploratory sensitivity analyses and should not be interpreted causally.")
+post `post_age_notes' ("These age and discharge models are supplemental sensitivity analyses and should not be interpreted causally.")
 post `post_age_notes' ("The home-any interaction model uses age_decade and averages predicted probabilities over the observed analytic cohort case mix.")
-post `post_age_notes' ("Overfitting diagnostics rely on small-sample heuristics: ordinal models use min category count / k_slopes; binary models use min(events, nonevents) / k_slopes.")
+post `post_age_notes' ("`small_sample_note'")
+post `post_age_notes' ("For binary models, support is summarized as the smaller of the event and nonevent counts divided by the number of free slope parameters.")
 postclose `post_age_model'
 postclose `post_age_diag'
 postclose `post_age_notes'
@@ -1005,7 +1011,7 @@ preserve
 use `age_model_tbl', clear
 keep if model_name == "Milestone-adjusted discharge ordinal model"
 export excel using "`results_dir'/Supplemental Table - Age and Discharge Sensitivity Models.xlsx", ///
-    sheet("Full cohort ordinal") firstrow(variables) replace
+    sheet("Full-cohort ordered logit") firstrow(variables) replace
 restore
 
 preserve
@@ -1024,7 +1030,7 @@ restore
 preserve
 use `decann_desc_tbl', clear
 export excel using "`results_dir'/Supplemental Table - Age and Discharge Sensitivity Models.xlsx", ///
-    sheet("Decann subgroup") firstrow(variables) sheetreplace
+    sheet("Decannulated subgroup") firstrow(variables) sheetreplace
 restore
 
 preserve
@@ -1062,9 +1068,9 @@ twoway ///
     yscale(range(0.6 4.4)) ///
     xtitle("Age (years)", size(medlarge)) ///
     ytitle("Discharge destination", size(medlarge)) ///
-    title("Raw age-discharge data", size(large)) ///
+    title("Observed discharge disposition by age", size(large)) ///
     legend(order(1 "Not decannulated" 2 "Decannulated") rows(1) size(small) position(6)) ///
-    note("Exploratory sensitivity analysis; subgroup counts are small.", size(vsmall)) ///
+    note("`figure_note_age_raw'", size(vsmall)) ///
     scheme(s1mono) ///
     name(gr_age_raw, replace)
 restore
@@ -1081,10 +1087,10 @@ if `interaction_fit_ok' {
             angle(45) labsize(vsmall)) ///
         xtitle("Age (years)", size(medlarge)) ///
         ytitle("Predicted Pr(home_any = 1)", size(medlarge)) ///
-        title("Model-based probability of home discharge", size(large)) ///
-        subtitle("Averaged over observed injury and completeness mix", size(small)) ///
+        title("Estimated probability of discharge to home", size(large)) ///
+        subtitle("By decannulation status; averaged over observed case mix", size(small)) ///
         legend(order(1 "Not decannulated" 2 "Decannulated") rows(1) size(small) position(6)) ///
-        note("Exploratory sensitivity analysis; subgroup counts are small.", size(vsmall)) ///
+        note("`figure_note_age_model'", size(vsmall)) ///
         scheme(s1mono) ///
         name(gr_age_margins, replace)
 }
@@ -1094,9 +1100,9 @@ else {
         xlabel(none) ylabel(none) ///
         xscale(off) yscale(off) ///
         text(0.05 0 "Interaction model omitted", placement(c) size(medlarge)) ///
-        text(-0.05 0 "See diagnostics table and log.", placement(c) size(medlarge)) ///
-        title("Model-based probability of home discharge", size(large)) ///
-        note("Exploratory sensitivity analysis; subgroup counts are small.", size(vsmall)) ///
+        text(-0.05 0 "See diagnostics worksheet and log.", placement(c) size(medlarge)) ///
+        title("Estimated probability of discharge to home", size(large)) ///
+        note("`figure_note_age_model'", size(vsmall)) ///
         legend(off) ///
         scheme(s1mono) ///
         name(gr_age_margins, replace)
