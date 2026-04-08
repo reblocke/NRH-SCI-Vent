@@ -116,8 +116,10 @@ quietly levelsof level, local(levels_obs)
 local c8_observed = strpos(" `levels_obs' ", " 8 ")
 local level_note "Analytic cohort contains observed C2-C7 only; the C7-C8 stratum contained observed C7 cases only."
 local figure_note_levels "Raw grouped proportions; bars show 95% Wilson CIs. C7-C8 contains observed C7 only."
-local figure_note_timing "Achievers only. Circles = patients; boxes = IQR; squares = median; whiskers = range."
-local figure_note_age "Points are individual patients. Shape/fill denote decannulation; lane outlines mark discharge categories; vertical offset is visual only."
+local figure_note_timing "Achievers only. Circles = patients; boxes = IQR; squares = median; whiskers = range. Values >100 days are plotted at the cap and labeled by actual time."
+local figure_note_age_1 "Points are individual patients. Shape/fill denote decannulation; lane outlines mark discharge categories."
+local figure_note_age_2 "Vertical offset is visual only."
+local figure_scheme "white_w3d"
 
 di as txt "Analytic N after exclusion: `analytic_n'"
 di as txt "Observed exact rehab injury levels: `levels_obs'"
@@ -198,10 +200,26 @@ postclose `post_grouped'
 * `preserve` keeps the full analytic cohort on a stack so each figure block can
 * temporarily filter the data and then return to the original cohort with
 * `restore`.
+* Use one shared x-axis across all three timing panels so the stacked figure can
+* be read against a common time scale. Cap the displayed range at 100 days so a
+* single far-right outlier does not flatten the rest of the distributions.
+quietly summarize days_to_daytime_wean if wean_during_day == 1 & !missing(days_to_daytime_wean)
+local xmax_timing = r(max)
+quietly summarize days_to_24hr_wean if wean_24hr == 1 & !missing(days_to_24hr_wean)
+if r(max) > `xmax_timing' local xmax_timing = r(max)
+quietly summarize daysfromadmissiontorehabtodecanu if decannulate == 1 & !missing(daysfromadmissiontorehabtodecanu)
+if r(max) > `xmax_timing' local xmax_timing = r(max)
+local xmax_timing = min(`xmax_timing', 100)
+if `xmax_timing' < 50 local xmax_timing = 50
+local timing_xlabel_spec "0(20)`xmax_timing'"
+
 preserve
 keep if wean_during_day == 1 & !missing(days_to_daytime_wean)
-tempvar level_jit rowtag med p25 p75 minv maxv n_level
+tempvar level_jit rowtag med p25 p75 minv maxv n_level time_plot outlier_flag outlier_lab
 generate double `level_jit' = level + (runiform() - 0.5) * 0.16
+generate double `time_plot' = min(days_to_daytime_wean, `xmax_timing')
+generate byte `outlier_flag' = days_to_daytime_wean > `xmax_timing'
+generate str8 `outlier_lab' = cond(`outlier_flag', string(days_to_daytime_wean, "%9.0f"), "")
 * `rowtag' limits the summary layers to one draw per level; the jittered points
 * keep individual achievers visible behind the box-and-whisker summary.
 bysort level: generate byte `rowtag' = _n == 1
@@ -211,9 +229,6 @@ bysort level: egen double `p25' = pctile(days_to_daytime_wean), p(25)
 bysort level: egen double `p75' = pctile(days_to_daytime_wean), p(75)
 bysort level: egen double `minv' = min(days_to_daytime_wean)
 bysort level: egen double `maxv' = max(days_to_daytime_wean)
-quietly summarize days_to_daytime_wean
-local xmax_day = ceil(r(max) / 10) * 10
-if `xmax_day' < 10 local xmax_day = 10
 
 * Layer order matters in `twoway`: whisker segments first, then the IQR box,
 * then the jittered patient points, and finally the median square on top.
@@ -221,17 +236,19 @@ twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rbar `p25' `p75' level if `rowtag' & `n_level' >= 4, horizontal barw(0.42) color(gs12) lcolor(black) lwidth(vthin)) ///
-    (scatter `level_jit' days_to_daytime_wean, msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if !`outlier_flag', msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if `outlier_flag', msymbol(Oh) msize(small) mcolor(gs8) ///
+        mlabel(`outlier_lab') mlabsize(small) mlabcolor(gs6) mlabposition(9) mlabgap(vsmall)) ///
     (scatter level `med' if `rowtag' & `n_level' >= 2, msymbol(S) msize(medsmall) mfcolor(black) mlcolor(black)), ///
     ylabel(2 "C2" 3 "C3" 4 "C4" 5 "C5" 6 "C6" 7 "C7", angle(0) labsize(medsmall) noticks) ///
     yscale(reverse range(1.5 7.5)) ///
-    xscale(range(0 `xmax_day')) ///
-    xlabel(, labsize(small)) ///
+    xscale(range(0 `xmax_timing')) ///
+    xlabel(`timing_xlabel_spec', labsize(small)) ///
     xtitle("Days from rehab admission", size(medlarge)) ///
     ytitle("Exact injury level", size(medlarge)) ///
     title("Time to daytime ventilator wean", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_day_timing_summary, replace)
 restore
 
@@ -239,8 +256,11 @@ restore
 * ventilation.
 preserve
 keep if wean_24hr == 1 & !missing(days_to_24hr_wean)
-tempvar level_jit rowtag med p25 p75 minv maxv n_level
+tempvar level_jit rowtag med p25 p75 minv maxv n_level time_plot outlier_flag outlier_lab
 generate double `level_jit' = level + (runiform() - 0.5) * 0.16
+generate double `time_plot' = min(days_to_24hr_wean, `xmax_timing')
+generate byte `outlier_flag' = days_to_24hr_wean > `xmax_timing'
+generate str8 `outlier_lab' = cond(`outlier_flag', string(days_to_24hr_wean, "%9.0f"), "")
 bysort level: generate byte `rowtag' = _n == 1
 bysort level: egen int `n_level' = count(days_to_24hr_wean)
 bysort level: egen double `med' = median(days_to_24hr_wean)
@@ -248,9 +268,6 @@ bysort level: egen double `p25' = pctile(days_to_24hr_wean), p(25)
 bysort level: egen double `p75' = pctile(days_to_24hr_wean), p(75)
 bysort level: egen double `minv' = min(days_to_24hr_wean)
 bysort level: egen double `maxv' = max(days_to_24hr_wean)
-quietly summarize days_to_24hr_wean
-local xmax_imv = ceil(r(max) / 10) * 10
-if `xmax_imv' < 10 local xmax_imv = 10
 
 * Use the same layer grammar as the first timing panel so the three outcomes
 * are directly comparable.
@@ -258,25 +275,30 @@ twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rbar `p25' `p75' level if `rowtag' & `n_level' >= 4, horizontal barw(0.42) color(gs12) lcolor(black) lwidth(vthin)) ///
-    (scatter `level_jit' days_to_24hr_wean, msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if !`outlier_flag', msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if `outlier_flag', msymbol(Oh) msize(small) mcolor(gs8) ///
+        mlabel(`outlier_lab') mlabsize(small) mlabcolor(gs6) mlabposition(9) mlabgap(vsmall)) ///
     (scatter level `med' if `rowtag' & `n_level' >= 2, msymbol(S) msize(medsmall) mfcolor(black) mlcolor(black)), ///
     ylabel(2 "C2" 3 "C3" 4 "C4" 5 "C5" 6 "C6" 7 "C7", angle(0) labsize(medsmall) noticks) ///
     yscale(reverse range(1.5 7.5)) ///
-    xscale(range(0 `xmax_imv')) ///
-    xlabel(, labsize(small)) ///
+    xscale(range(0 `xmax_timing')) ///
+    xlabel(`timing_xlabel_spec', labsize(small)) ///
     xtitle("Days from rehab admission", size(medlarge)) ///
     ytitle("Exact injury level", size(medlarge)) ///
     title("Time to liberation from invasive ventilation", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_imv_timing_summary, replace)
 restore
 
 * Repeat the same timing summary pattern for decannulation.
 preserve
 keep if decannulate == 1 & !missing(daysfromadmissiontorehabtodecanu)
-tempvar level_jit rowtag med p25 p75 minv maxv n_level
+tempvar level_jit rowtag med p25 p75 minv maxv n_level time_plot outlier_flag outlier_lab
 generate double `level_jit' = level + (runiform() - 0.5) * 0.16
+generate double `time_plot' = min(daysfromadmissiontorehabtodecanu, `xmax_timing')
+generate byte `outlier_flag' = daysfromadmissiontorehabtodecanu > `xmax_timing'
+generate str8 `outlier_lab' = cond(`outlier_flag', string(daysfromadmissiontorehabtodecanu, "%9.0f"), "")
 bysort level: generate byte `rowtag' = _n == 1
 bysort level: egen int `n_level' = count(daysfromadmissiontorehabtodecanu)
 bysort level: egen double `med' = median(daysfromadmissiontorehabtodecanu)
@@ -284,9 +306,6 @@ bysort level: egen double `p25' = pctile(daysfromadmissiontorehabtodecanu), p(25
 bysort level: egen double `p75' = pctile(daysfromadmissiontorehabtodecanu), p(75)
 bysort level: egen double `minv' = min(daysfromadmissiontorehabtodecanu)
 bysort level: egen double `maxv' = max(daysfromadmissiontorehabtodecanu)
-quietly summarize daysfromadmissiontorehabtodecanu
-local xmax_dec = ceil(r(max) / 10) * 10
-if `xmax_dec' < 10 local xmax_dec = 10
 
 * Decannulation keeps the same plotting grammar but is restricted to patients
 * who actually achieved decannulation and have a recorded time.
@@ -294,17 +313,19 @@ twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rbar `p25' `p75' level if `rowtag' & `n_level' >= 4, horizontal barw(0.42) color(gs12) lcolor(black) lwidth(vthin)) ///
-    (scatter `level_jit' daysfromadmissiontorehabtodecanu, msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if !`outlier_flag', msymbol(Oh) msize(small) mcolor(gs8)) ///
+    (scatter `level_jit' `time_plot' if `outlier_flag', msymbol(Oh) msize(small) mcolor(gs8) ///
+        mlabel(`outlier_lab') mlabsize(small) mlabcolor(gs6) mlabposition(9) mlabgap(vsmall)) ///
     (scatter level `med' if `rowtag' & `n_level' >= 2, msymbol(S) msize(medsmall) mfcolor(black) mlcolor(black)), ///
     ylabel(2 "C2" 3 "C3" 4 "C4" 5 "C5" 6 "C6" 7 "C7", angle(0) labsize(medsmall) noticks) ///
     yscale(reverse range(1.5 7.5)) ///
-    xscale(range(0 `xmax_dec')) ///
-    xlabel(, labsize(small)) ///
+    xscale(range(0 `xmax_timing')) ///
+    xlabel(`timing_xlabel_spec', labsize(small)) ///
     xtitle("Days from rehab admission", size(medlarge)) ///
     ytitle("Exact injury level", size(medlarge)) ///
     title("Time to decannulation", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_dec_timing_summary, replace)
 restore
 
@@ -327,13 +348,16 @@ use `grouped_level_tbl', clear
 generate str12 lab_day = string(day_wean_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_imv = string(imv_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_dec = string(decann_n, "%9.0f") + "/" + string(n_total, "%9.0f")
+* Push most count labels slightly to the right of the point and pull the
+* rightmost group's label to the left so it stays readable within the panel.
+generate byte lab_pos = cond(group_order == 4, 9, 3)
 
 * Each grouped panel is a two-layer plot: confidence interval bars plus a point
 * estimate labeled with the underlying count.
 twoway ///
     (rcap day_wean_ci_lb day_wean_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
     (scatter day_wean_pct group_order, msymbol(O) msize(medlarge) mcolor(black) ///
-        mlabel(lab_day) mlabsize(small) mlabcolor(black) mlabposition(12)), ///
+        mlabel(lab_day) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
@@ -341,13 +365,13 @@ twoway ///
     ytitle("Achieved milestone (%)", size(medlarge)) ///
     title("Daytime ventilator wean", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_day_group4, replace)
 
 twoway ///
     (rcap imv_ci_lb imv_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
     (scatter imv_pct group_order, msymbol(D) msize(medlarge) mcolor(black) ///
-        mlabel(lab_imv) mlabsize(small) mlabcolor(black) mlabposition(12)), ///
+        mlabel(lab_imv) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
@@ -355,13 +379,13 @@ twoway ///
     ytitle("Achieved milestone (%)", size(medlarge)) ///
     title("Liberation from invasive ventilation", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_imv_group4, replace)
 
 twoway ///
     (rcap decann_ci_lb decann_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
     (scatter decann_pct group_order, msymbol(T) msize(large) mcolor(black) ///
-        mlabel(lab_dec) mlabsize(small) mlabcolor(black) mlabposition(12)), ///
+        mlabel(lab_dec) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
@@ -369,12 +393,12 @@ twoway ///
     ytitle("Achieved milestone (%)", size(medlarge)) ///
     title("Decannulation", size(large)) ///
     legend(off) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_dec_group4, replace)
 
 graph combine gr_day_group4 gr_imv_group4 gr_dec_group4, ///
     cols(1) xsize(6) ysize(10) ///
-    note("`figure_note_levels'", size(vsmall)) ///
+    note("`figure_note_levels'", size(vsmall) span justification(left)) ///
     imargin(small) ///
     name(gr_group4_milestones, replace)
 quietly _export_graph_tiff, graphname(gr_group4_milestones) ///
@@ -417,11 +441,11 @@ twoway ///
     xtitle("Age (years)", size(medlarge)) ///
     ytitle("Discharge destination", size(medlarge) margin(medlarge)) ///
     title("Observed discharge disposition by age", size(large)) ///
-    note("`figure_note_age'", size(vsmall)) ///
+    note("`figure_note_age_1'" "`figure_note_age_2'", size(vsmall) span justification(left)) ///
     legend(order(2 "Not decannulated" 3 "Decannulated") rows(1) size(small) position(6)) ///
-    graphregion(color(white)) ///
+    graphregion(color(white) margin(medsmall)) ///
     plotregion(margin(small) lcolor(none)) ///
-    scheme(s1mono) ///
+    scheme(`figure_scheme') ///
     name(gr_age_raw_overlay, replace)
 quietly _export_graph_tiff, graphname(gr_age_raw_overlay) ///
     outfile("`results_dir'/Supplemental Figure - Observed Discharge Disposition by Age, Split by Decannulation.tiff") ///
