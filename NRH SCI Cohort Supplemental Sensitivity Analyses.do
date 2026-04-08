@@ -142,6 +142,8 @@ label variable injury_group4 "Finer injury level group"
 
 * Build one compact grouped summary table in memory so the grouped milestone
 * figure can be drawn without re-counting inside each panel.
+* `postfile` is Stata's row-by-row way to assemble a small derived dataset
+* without altering the patient-level data currently in memory.
 tempfile grouped_level_tbl
 tempname post_grouped
 postfile `post_grouped' ///
@@ -187,10 +189,15 @@ forvalues grp = 1/4 {
         (`imv_n') (`imv_pct') (`imv_lb') (`imv_ub') ///
         (`dec_n') (`dec_pct') (`dec_lb') (`dec_ub')
 }
+* Close the temporary results file so it can be re-opened later like a regular
+* dataset when drawing the grouped proportion figure.
 postclose `post_grouped'
 
 * Exact-level timing figure: for each milestone, show raw achievers plus a
 * horizontal box-and-whisker summary within exact injury level.
+* `preserve` keeps the full analytic cohort on a stack so each figure block can
+* temporarily filter the data and then return to the original cohort with
+* `restore`.
 preserve
 keep if wean_during_day == 1 & !missing(days_to_daytime_wean)
 tempvar level_jit rowtag med p25 p75 minv maxv n_level
@@ -208,6 +215,8 @@ quietly summarize days_to_daytime_wean
 local xmax_day = ceil(r(max) / 10) * 10
 if `xmax_day' < 10 local xmax_day = 10
 
+* Layer order matters in `twoway`: whisker segments first, then the IQR box,
+* then the jittered patient points, and finally the median square on top.
 twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
@@ -243,6 +252,8 @@ quietly summarize days_to_24hr_wean
 local xmax_imv = ceil(r(max) / 10) * 10
 if `xmax_imv' < 10 local xmax_imv = 10
 
+* Use the same layer grammar as the first timing panel so the three outcomes
+* are directly comparable.
 twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
@@ -277,6 +288,8 @@ quietly summarize daysfromadmissiontorehabtodecanu
 local xmax_dec = ceil(r(max) / 10) * 10
 if `xmax_dec' < 10 local xmax_dec = 10
 
+* Decannulation keeps the same plotting grammar but is restricted to patients
+* who actually achieved decannulation and have a recorded time.
 twoway ///
     (rcap `minv' `p25' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
     (rcap `p75' `maxv' level if `rowtag' & `n_level' >= 4, horizontal lcolor(black) lwidth(thin)) ///
@@ -308,11 +321,15 @@ quietly _export_graph_tiff, graphname(gr_exact_timing_summary) ///
 * Grouped milestone figure: raw grouped proportions with Wilson intervals and
 * n/N labels for each finer injury-level stratum.
 preserve
+* Re-open the temporary grouped summary table so the plotting code below works
+* with one row per injury stratum rather than one row per patient.
 use `grouped_level_tbl', clear
 generate str12 lab_day = string(day_wean_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_imv = string(imv_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_dec = string(decann_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 
+* Each grouped panel is a two-layer plot: confidence interval bars plus a point
+* estimate labeled with the underlying count.
 twoway ///
     (rcap day_wean_ci_lb day_wean_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
     (scatter day_wean_pct group_order, msymbol(O) msize(medlarge) mcolor(black) ///
@@ -384,6 +401,8 @@ generate double `lane_high' = `age_xmax'
 
 * Outline-only lane guides clarify the discharge rows while leaving the plot
 * visually light; the legend is attached only to the two patient-point layers.
+* The lane layer is drawn first, followed by open circles for not decannulated
+* patients and filled diamonds for decannulated patients.
 twoway ///
     (rbar `lane_low' `lane_high' discharge_to if `lane_tag', ///
         horizontal barw(0.34) fcolor(none) lcolor(gs10) lwidth(vthin)) ///
