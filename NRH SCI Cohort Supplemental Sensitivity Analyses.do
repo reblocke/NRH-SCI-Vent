@@ -1,6 +1,7 @@
 * Supplemental figure generation for the NRH SCI cohort paper.
-* Recreates the paper-matched cohort from nrh-sci-cleaned.dta and writes only
-* the three retained publication figures plus the run log.
+* Recreates the paper-matched cohort from nrh-sci-cleaned.dta and writes the
+* retained publication figures, one exploratory subgroup figure, one compact
+* correspondence table, and the run log.
 
 version 18
 clear all
@@ -85,12 +86,14 @@ end
 
 use "`project_root'/nrh-sci-cleaned.dta", clear
 
-* Validate only the variables needed for the three retained figures.
+* Validate only the variables needed for the retained figures and the new
+* exploratory decannulated-subgroup model block.
 local required_vars ///
     age level wean_during_day days_to_daytime_wean ///
     wean_24hr days_to_24hr_wean decannulate ///
     daysfromadmissiontorehabtodecanu discharge_to ///
-    partial_wean_at_admit
+    partial_wean_at_admit age_decade weaning_outcome ///
+    pneumonia_prior pna_at_rehab
 
 local missing_vars ""
 foreach var of local required_vars {
@@ -119,6 +122,7 @@ local figure_note_levels "Raw grouped proportions; bars show 95% Wilson CIs. C7-
 local figure_note_timing "Achievers only. Circles = patients; boxes = IQR; squares = median; whiskers = range. Values >100 days are plotted at the cap and labeled by actual time."
 local figure_note_age_1 "Points are individual patients. Shape/fill denote decannulation; lane outlines mark discharge categories."
 local figure_note_age_2 "Vertical offset is visual only."
+local figure_note_age_decann "Decannulated subgroup only. Points are individual patients; vertical jitter is visual only."
 local figure_scheme "white_w3d"
 
 di as txt "Analytic N after exclusion: `analytic_n'"
@@ -450,6 +454,262 @@ twoway ///
 quietly _export_graph_tiff, graphname(gr_age_raw_overlay) ///
     outfile("`results_dir'/Supplemental Figure - Observed Discharge Disposition by Age, Split by Decannulation.tiff") ///
     width(3600) height(2000)
+
+* Exploratory subgroup figure: raw age-versus-discharge plot among patients
+* who decannulated, using the same visual language as the full-cohort panel.
+preserve
+keep if decannulate == 1 & !missing(age, discharge_to)
+
+* Recode to contiguous ordered categories because LTAC is not observed in the
+* decannulated subgroup and should not create an empty lane or cutpoint.
+generate byte discharge_to_decann = .
+replace discharge_to_decann = 1 if discharge_to == 2
+replace discharge_to_decann = 2 if discharge_to == 3
+replace discharge_to_decann = 3 if discharge_to == 4
+assert !missing(discharge_to_decann)
+label define discharge_to_decann_lab 1 "SNF" 2 "Home w/ HH" 3 "Home", replace
+label values discharge_to_decann discharge_to_decann_lab
+
+quietly summarize age
+local age_xmin_dec = 15
+local age_xmax_dec = ceil(r(max) / 5) * 5
+if `age_xmax_dec' < 75 local age_xmax_dec = 75
+local age_xlabel_dec "15(10)75"
+if `age_xmax_dec' > 75 local age_xlabel_dec "`age_xlabel_dec' `age_xmax_dec'"
+
+tempvar discharge_jit_dec lane_tag_dec lane_low_dec lane_high_dec
+generate double `discharge_jit_dec' = discharge_to_decann + (runiform() - 0.5) * 0.08
+bysort discharge_to_decann: generate byte `lane_tag_dec' = _n == 1
+generate double `lane_low_dec' = `age_xmin_dec'
+generate double `lane_high_dec' = `age_xmax_dec'
+
+twoway ///
+    (rbar `lane_low_dec' `lane_high_dec' discharge_to_decann if `lane_tag_dec', ///
+        horizontal barw(0.34) fcolor(none) lcolor(gs10) lwidth(vthin)) ///
+    (scatter `discharge_jit_dec' age, ///
+        msymbol(D) msize(medium) mfcolor(black) mlcolor(black)), ///
+    ylabel(1 "SNF" 2 "Home w/ HH" 3 "Home", angle(0) labsize(medsmall) noticks) ///
+    yscale(range(0.6 3.4) noline) ///
+    xscale(range(`age_xmin_dec' `age_xmax_dec')) ///
+    xlabel(`age_xlabel_dec', labsize(small)) ///
+    xtitle("Age (years)", size(medlarge)) ///
+    ytitle("Discharge destination", size(medlarge) margin(medlarge)) ///
+    title("Observed discharge disposition by age among decannulated patients", size(large)) ///
+    note("`figure_note_age_decann'", size(vsmall) span justification(left)) ///
+    legend(off) ///
+    graphregion(color(white) margin(medsmall)) ///
+    plotregion(margin(small) lcolor(none)) ///
+    scheme(`figure_scheme') ///
+    name(gr_age_decann_only, replace)
+quietly _export_graph_tiff, graphname(gr_age_decann_only) ///
+    outfile("`results_dir'/Supplemental Figure - Discharge by Age Among Decannulated Patients.tiff") ///
+    width(3200) height(1800)
+restore
+
+* Primary full-cohort response model: test whether age remains associated with
+* discharge category after accounting for respiratory milestone status,
+* completeness, and high-vs-low injury level.
+preserve
+
+di as txt " "
+di as txt "Primary full-cohort milestone-adjusted discharge model"
+di as txt "Analytic cohort N: " _N
+tab weaning_outcome, missing
+di as txt "No credible baseline comorbidity/frailty marker was available; pneumonia variables were treated as respiratory proxies and were not modeled."
+
+* Reuse the temporary PLUS cache so proportional-odds diagnostics can run
+* without changing the user's persistent ado tree.
+local plus_orig "`c(sysdir_plus)'"
+local plus_tmp "`c(tmpdir)'codex_oparallel_plus"
+capture mkdir "`plus_tmp'"
+quietly sysdir set PLUS "`plus_tmp'"
+adopath ++ "`plus_tmp'"
+
+capture which oparallel
+if _rc {
+    di as txt "Installing oparallel into temporary PLUS directory: `plus_tmp'"
+    capture noisily ssc install oparallel, replace
+    if _rc {
+        quietly sysdir set PLUS "`plus_orig'"
+        di as err "Failed to install oparallel into temporary PLUS directory."
+        exit 111
+    }
+}
+capture which oparallel
+if _rc {
+    quietly sysdir set PLUS "`plus_orig'"
+    di as err "oparallel not found after installation attempt."
+    exit 111
+}
+
+ologit discharge_to c.age_decade i.comp_vs_part i.high_vs_low ib1.weaning_outcome
+estimates store full_cohort_milestone_model
+local age_or_full = exp(_b[age_decade])
+local age_z_full = _b[age_decade] / _se[age_decade]
+local age_p_full = 2 * normal(-abs(`age_z_full'))
+testparm i.weaning_outcome
+local p_milestone_full = r(p)
+capture noisily oparallel
+if _rc {
+    di as txt "Parallel-lines diagnostic via oparallel could not be computed for the primary full-cohort milestone-adjusted model because one or more auxiliary logits encountered perfect prediction."
+}
+estimates restore full_cohort_milestone_model
+
+tempfile corr_home_marg corr_wean_counts analytic_cohort_copy
+margins weaning_outcome, at(age_decade=(3 7)) predict(outcome(4)) saving(`corr_home_marg', replace)
+
+save `analytic_cohort_copy', replace
+contract weaning_outcome
+rename _freq n_milestone
+save `corr_wean_counts', replace
+use `analytic_cohort_copy', clear
+
+* Reformat the `margins` output into one compact correspondence table with one
+* row per milestone state and age-30/age-70 adjusted home-discharge estimates.
+use `corr_home_marg', clear
+keep _m1 _at1 _margin _ci_lb _ci_ub
+rename (_m1 _at1) (weaning_outcome age_decade)
+generate int age_years = 10 * age_decade
+drop age_decade
+generate double home_prob_pct = 100 * _margin
+generate double home_ci_lb_pct = 100 * _ci_lb
+generate double home_ci_ub_pct = 100 * _ci_ub
+drop _margin _ci_lb _ci_ub
+reshape wide home_prob_pct home_ci_lb_pct home_ci_ub_pct, i(weaning_outcome) j(age_years)
+merge 1:1 weaning_outcome using `corr_wean_counts', nogen assert(match)
+decode weaning_outcome, gen(weaning_status)
+generate byte milestone_order = weaning_outcome
+order weaning_status n_milestone home_prob_pct30 home_ci_lb_pct30 home_ci_ub_pct30 ///
+    home_prob_pct70 home_ci_lb_pct70 home_ci_ub_pct70
+local decann_code = .
+quietly levelsof weaning_outcome if strpos(lower(weaning_status), "decann") > 0, local(decann_code)
+quietly summarize home_prob_pct30 if weaning_outcome == `decann_code', meanonly
+local decann_home30 = r(mean)
+quietly summarize home_prob_pct70 if weaning_outcome == `decann_code', meanonly
+local decann_home70 = r(mean)
+generate str12 home_prob_30 = string(home_prob_pct30, "%4.1f") + "%"
+generate str24 home_ci_30 = string(home_ci_lb_pct30, "%4.1f") + "% to " + string(home_ci_ub_pct30, "%4.1f") + "%"
+generate str12 home_prob_70 = string(home_prob_pct70, "%4.1f") + "%"
+generate str24 home_ci_70 = string(home_ci_lb_pct70, "%4.1f") + "% to " + string(home_ci_ub_pct70, "%4.1f") + "%"
+keep milestone_order weaning_status n_milestone home_prob_30 home_ci_30 home_prob_70 home_ci_70
+rename (weaning_status n_milestone home_prob_30 home_ci_30 home_prob_70 home_ci_70) ///
+    (milestone_status N pred_home_age30 ci_home_age30 pred_home_age70 ci_home_age70)
+sort milestone_order
+drop milestone_order
+export delimited using "`results_dir'/Correspondence Table - Adjusted Home Discharge Probabilities by Milestone and Age.csv", replace
+list, noobs abbreviate(24)
+use `analytic_cohort_copy', clear
+
+local age_or_full_fmt : display %4.2f `age_or_full'
+local decann_home30_fmt : display %4.1f `decann_home30'
+local decann_home70_fmt : display %4.1f `decann_home70'
+if `age_p_full' < 0.05 local age_phrase_full "older age remained associated with more resource-intensive discharge"
+else local age_phrase_full "older age was not a clear independent predictor of discharge category"
+if `p_milestone_full' < 0.05 local milestone_phrase_full "overall respiratory milestone status was associated with discharge category"
+else local milestone_phrase_full "overall respiratory milestone status was not clearly associated with discharge category"
+di as txt "Interpretation: `age_phrase_full' after adjustment for respiratory milestone status, completeness, and high-vs-low injury level (age OR per decade older = `age_or_full_fmt'); `milestone_phrase_full'."
+di as txt "Adjusted predicted probability of home discharge for decannulated patients was `decann_home30_fmt'% at age 30 and `decann_home70_fmt'% at age 70."
+di as txt "Correspondence table written to `results_dir'/Correspondence Table - Adjusted Home Discharge Probabilities by Milestone and Age.csv"
+
+* Exploratory sensitivity: replace the broad high-vs-low injury dichotomy with
+* the four grouped cervical injury strata used in the descriptive figure.
+di as txt " "
+di as txt "Exploratory grouped-injury discharge sensitivity model"
+quietly count if injury_group4 == 4
+local n_c78 = r(N)
+di as txt "Observed C7-C8 grouped stratum N: `n_c78'"
+tab injury_group4, missing
+ologit discharge_to c.age_decade i.comp_vs_part i.injury_group4, or
+local age_or_group = exp(_b[age_decade])
+local age_z_group = _b[age_decade] / _se[age_decade]
+local age_p_group = 2 * normal(-abs(`age_z_group'))
+testparm i.injury_group4
+local p_injury_group = r(p)
+capture noisily oparallel
+if _rc {
+    di as txt "Parallel-lines diagnostic via oparallel could not be computed for the grouped-injury discharge sensitivity model because one or more auxiliary logits encountered perfect prediction."
+}
+
+local age_or_group_fmt : display %4.2f `age_or_group'
+if `age_p_group' < 0.05 local age_phrase_group "older age remained associated with more resource-intensive discharge"
+else local age_phrase_group "older age was not a clear independent predictor of discharge category"
+if `p_injury_group' < 0.05 local injury_phrase_group "grouped injury level was associated with discharge category"
+else local injury_phrase_group "grouped injury-level terms were imprecise overall"
+di as txt "Exploratory interpretation: `age_phrase_group' after replacing the high-vs-low dichotomy with four injury groups (age OR per decade older = `age_or_group_fmt'); `injury_phrase_group', and the C7-C8 estimate should be interpreted cautiously because N=`n_c78'."
+
+quietly sysdir set PLUS "`plus_orig'"
+restore
+
+* Exploratory decannulated-subgroup ordered-logit models: age is the only
+* defensible predictor here because milestone status is constant after
+* conditioning on decannulation, and no baseline comorbidity index is present.
+preserve
+keep if decannulate == 1
+
+di as txt " "
+di as txt "Exploratory decannulated-subgroup ordinal discharge model"
+di as txt "Decannulated subgroup N: " _N
+tab discharge_to, missing
+tab weaning_outcome, missing
+di as txt "Weaning outcome is constant in this subgroup (all decannulated); no milestone-predictor subgroup model was fit."
+di as txt "No credible baseline comorbidity/frailty marker was available; pneumonia variables were treated as respiratory proxies and were not modeled."
+
+generate byte discharge_to_decann = .
+replace discharge_to_decann = 1 if discharge_to == 2
+replace discharge_to_decann = 2 if discharge_to == 3
+replace discharge_to_decann = 3 if discharge_to == 4
+assert !missing(discharge_to_decann)
+label define discharge_to_decann_lab 1 "SNF" 2 "Home w/ Home Health" 3 "Home", replace
+label values discharge_to_decann discharge_to_decann_lab
+tab discharge_to_decann, missing
+
+* Use a temporary PLUS directory so package installation for diagnostics does
+* not modify the user's persistent Stata setup.
+local plus_orig "`c(sysdir_plus)'"
+local plus_tmp "`c(tmpdir)'codex_oparallel_plus"
+capture mkdir "`plus_tmp'"
+quietly sysdir set PLUS "`plus_tmp'"
+adopath ++ "`plus_tmp'"
+
+capture which oparallel
+if _rc {
+    di as txt "Installing oparallel into temporary PLUS directory: `plus_tmp'"
+    capture noisily ssc install oparallel, replace
+    if _rc {
+        quietly sysdir set PLUS "`plus_orig'"
+        di as err "Failed to install oparallel into temporary PLUS directory."
+        exit 111
+    }
+}
+capture which oparallel
+if _rc {
+    quietly sysdir set PLUS "`plus_orig'"
+    di as err "oparallel not found after installation attempt."
+    exit 111
+}
+
+di as txt "Primary model: ordered logit of discharge category on age per decade."
+ologit discharge_to_decann c.age_decade, or
+capture noisily oparallel
+if _rc {
+    quietly sysdir set PLUS "`plus_orig'"
+    di as err "oparallel failed after the age-per-decade model."
+    exit 111
+}
+
+di as txt "Sensitivity model: ordered logit of discharge category on age per year."
+ologit discharge_to_decann c.age, or
+capture noisily oparallel
+if _rc {
+    quietly sysdir set PLUS "`plus_orig'"
+    di as err "oparallel failed after the age-per-year model."
+    exit 111
+}
+
+di as txt "Exploratory interpretation: within the decannulated subgroup, age was not a clear predictor of discharge category, and proportional-odds diagnostics did not detect a violation, although power is limited."
+
+quietly sysdir set PLUS "`plus_orig'"
+restore
 
 di as txt "Supplemental figure generation completed."
 di as txt "Expected outputs written to `results_dir'."
