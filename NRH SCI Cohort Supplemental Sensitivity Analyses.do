@@ -118,8 +118,8 @@ local analytic_n = r(N)
 quietly levelsof level, local(levels_obs)
 local c8_observed = strpos(" `levels_obs' ", " 8 ")
 local level_note "Analytic cohort contains observed C2-C7 only; the C7-C8 stratum contained observed C7 cases only."
-local figure_note_levels_1 "Unadjusted grouped proportions; bars show 95% Wilson confidence intervals."
-local figure_note_levels_2 "Labels show n/N. C7-C8 contains observed C7 only."
+local figure_note_levels_1 "Unadjusted observed proportions; whiskers show 95% Wilson confidence intervals."
+local figure_note_levels_2 "Injury strata are shown as grouped cervical levels. C7-C8 contains observed C7 only."
 local figure_note_timing "Achievers only. Circles = patients; boxes = IQR; squares = median; whiskers = range. Values >100 days are plotted at the cap and labeled by actual time."
 local figure_note_age_1 "Points are individual patients. Shape/fill denote decannulation; lane outlines mark discharge categories."
 local figure_note_age_2 "Vertical offset is visual only."
@@ -380,157 +380,194 @@ quietly _export_graph_tiff, graphname(gr_exact_timing_summary) ///
     outfile("`results_dir'/Supplemental Figure - Median Days to Milestones by Exact Injury Level.tiff") ///
     width(3000) height(2400)
 
-* Combined grouped injury figure: milestone-achievement and discharge-
-* disposition proportions share the same finer injury-group x-axis and use the
-* same unadjusted Wilson-interval plotting grammar.
+* Combined grouped injury figure: show both milestone and discharge rates with
+* the same clustered dot-and-whisker grammar so injury strata can be compared
+* within each outcome category without fragmenting the figure into many panels.
 preserve
 * Re-open the temporary grouped summary table so the plotting code below works
 * with one row per injury stratum rather than one row per patient.
 use `grouped_level_tbl', clear
-generate str12 lab_day = string(day_wean_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_imv = string(imv_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_dec = string(decann_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_ltac = string(ltac_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_snf = string(snf_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_hwhh = string(hwhh_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-generate str12 lab_home = string(home_n, "%9.0f") + "/" + string(n_total, "%9.0f")
-* Push most count labels slightly to the right of the point and pull the
-* rightmost group's label to the left so it stays readable within the panel.
-generate byte lab_pos = cond(group_order == 4, 9, 3)
+sort group_order
 
-local col_day "navy"
-local col_imv "teal"
-local col_dec "cranberry"
-local col_ltac "gs6"
-local col_snf "orange_red"
-local col_hwhh "forest_green"
-local col_home "purple"
+quietly summarize n_total if group_order == 1, meanonly
+local n_g1 = r(mean)
+quietly summarize n_total if group_order == 2, meanonly
+local n_g2 = r(mean)
+quietly summarize n_total if group_order == 3, meanonly
+local n_g3 = r(mean)
+quietly summarize n_total if group_order == 4, meanonly
+local n_g4 = r(mean)
+local col_g1 "orange_red"
+local col_g2 "magenta"
+local col_g3 "blue"
+local col_g4 "teal"
+local strata_lab_y_hi = -6.4
+local strata_lab_y_lo = -10.0
 
-* Each panel is a two-layer plot: confidence interval bars plus a point
-* estimate labeled with the underlying count.
+local sym_g1 "O"
+local sym_g2 "D"
+local sym_g3 "S"
+local sym_g4 "T"
+
+tempfile milestone_tbl discharge_tbl
+tempname post_milestone post_discharge
+
+postfile `post_milestone' ///
+    double category_order x_pos group_order pct ci_lb ci_ub using `milestone_tbl', replace
+postfile `post_discharge' ///
+    double category_order x_pos group_order pct ci_lb ci_ub using `discharge_tbl', replace
+
+forvalues grp = 1/4 {
+    local x_off = -0.24
+    if `grp' == 2 local x_off = -0.08
+    if `grp' == 3 local x_off = 0.08
+    if `grp' == 4 local x_off = 0.24
+
+    quietly summarize day_wean_pct if group_order == `grp', meanonly
+    local day_pct = r(mean)
+    quietly summarize day_wean_ci_lb if group_order == `grp', meanonly
+    local day_lb = r(mean)
+    quietly summarize day_wean_ci_ub if group_order == `grp', meanonly
+    local day_ub = r(mean)
+    post `post_milestone' (1) (1 + `x_off') (`grp') (`day_pct') (`day_lb') (`day_ub')
+
+    quietly summarize imv_pct if group_order == `grp', meanonly
+    local imv_pct = r(mean)
+    quietly summarize imv_ci_lb if group_order == `grp', meanonly
+    local imv_lb = r(mean)
+    quietly summarize imv_ci_ub if group_order == `grp', meanonly
+    local imv_ub = r(mean)
+    post `post_milestone' (2) (2 + `x_off') (`grp') (`imv_pct') (`imv_lb') (`imv_ub')
+
+    quietly summarize decann_pct if group_order == `grp', meanonly
+    local dec_pct = r(mean)
+    quietly summarize decann_ci_lb if group_order == `grp', meanonly
+    local dec_lb = r(mean)
+    quietly summarize decann_ci_ub if group_order == `grp', meanonly
+    local dec_ub = r(mean)
+    post `post_milestone' (3) (3 + `x_off') (`grp') (`dec_pct') (`dec_lb') (`dec_ub')
+
+    quietly summarize ltac_pct if group_order == `grp', meanonly
+    local ltac_pct = r(mean)
+    quietly summarize ltac_ci_lb if group_order == `grp', meanonly
+    local ltac_lb = r(mean)
+    quietly summarize ltac_ci_ub if group_order == `grp', meanonly
+    local ltac_ub = r(mean)
+    post `post_discharge' (1) (1 + `x_off') (`grp') (`ltac_pct') (`ltac_lb') (`ltac_ub')
+
+    quietly summarize snf_pct if group_order == `grp', meanonly
+    local snf_pct = r(mean)
+    quietly summarize snf_ci_lb if group_order == `grp', meanonly
+    local snf_lb = r(mean)
+    quietly summarize snf_ci_ub if group_order == `grp', meanonly
+    local snf_ub = r(mean)
+    post `post_discharge' (2) (2 + `x_off') (`grp') (`snf_pct') (`snf_lb') (`snf_ub')
+
+    quietly summarize hwhh_pct if group_order == `grp', meanonly
+    local hwhh_pct = r(mean)
+    quietly summarize hwhh_ci_lb if group_order == `grp', meanonly
+    local hwhh_lb = r(mean)
+    quietly summarize hwhh_ci_ub if group_order == `grp', meanonly
+    local hwhh_ub = r(mean)
+    post `post_discharge' (3) (3 + `x_off') (`grp') (`hwhh_pct') (`hwhh_lb') (`hwhh_ub')
+
+    quietly summarize home_pct if group_order == `grp', meanonly
+    local home_pct = r(mean)
+    quietly summarize home_ci_lb if group_order == `grp', meanonly
+    local home_lb = r(mean)
+    quietly summarize home_ci_ub if group_order == `grp', meanonly
+    local home_ub = r(mean)
+    post `post_discharge' (4) (4 + `x_off') (`grp') (`home_pct') (`home_lb') (`home_ub')
+}
+
+postclose `post_milestone'
+postclose `post_discharge'
+
+use `milestone_tbl', clear
+sort category_order group_order
 twoway ///
-    (rcap day_wean_ci_lb day_wean_ci_ub group_order, lcolor(`col_day') lwidth(medthick)) ///
-    (scatter day_wean_pct group_order, msymbol(O) msize(medlarge) mcolor(`col_day') ///
-        mlabel(lab_day) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("Daytime ventilator wean", size(large)) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 1, lcolor(`col_g1') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 1, msymbol(`sym_g1') msize(large) mcolor(`col_g1')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 2, lcolor(`col_g2') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 2, msymbol(`sym_g2') msize(large) mcolor(`col_g2')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 3, lcolor(`col_g3') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 3, msymbol(`sym_g3') msize(large) mcolor(`col_g3')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 4, lcolor(`col_g4') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 4, msymbol(`sym_g4') msize(vlarge) mcolor(`col_g4')), ///
+    xlabel(1 "Daytime wean" 2 "Liberation from IMV" 3 "Decannulation", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(small)) ///
+    yscale(range(-12 100)) ///
+    xscale(range(0.5 3.5)) ///
+    xtitle("") ///
+    ytitle("Achieved milestone (%)", size(large)) ///
+    title("Milestone achievement", size(vlarge)) ///
+    text(`strata_lab_y_hi' 0.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 0.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 1.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 1.24 "C7-8", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 1.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 1.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 2.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 2.24 "C7-8", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 2.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 2.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 3.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 3.24 "C7-8", place(c) size(small) color(black)) ///
     legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_day_group4, replace)
-
-twoway ///
-    (rcap imv_ci_lb imv_ci_ub group_order, lcolor(`col_imv') lwidth(medthick)) ///
-    (scatter imv_pct group_order, msymbol(D) msize(medlarge) mcolor(`col_imv') ///
-        mlabel(lab_imv) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("Liberation from IMV", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_imv_group4, replace)
-
-twoway ///
-    (rcap decann_ci_lb decann_ci_ub group_order, lcolor(`col_dec') lwidth(medthick)) ///
-    (scatter decann_pct group_order, msymbol(T) msize(large) mcolor(`col_dec') ///
-        mlabel(lab_dec) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("Decannulation", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_dec_group4, replace)
-
-twoway ///
-    (rcap ltac_ci_lb ltac_ci_ub group_order, lcolor(`col_ltac') lwidth(medthick)) ///
-    (scatter ltac_pct group_order, msymbol(O) msize(medlarge) mcolor(`col_ltac') ///
-        mlabel(lab_ltac) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("LTAC", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_ltac_group4, replace)
-
-twoway ///
-    (rcap snf_ci_lb snf_ci_ub group_order, lcolor(`col_snf') lwidth(medthick)) ///
-    (scatter snf_pct group_order, msymbol(D) msize(medlarge) mcolor(`col_snf') ///
-        mlabel(lab_snf) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("SNF", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_snf_group4, replace)
-
-twoway ///
-    (rcap hwhh_ci_lb hwhh_ci_ub group_order, lcolor(`col_hwhh') lwidth(medthick)) ///
-    (scatter hwhh_pct group_order, msymbol(Th) msize(large) mcolor(`col_hwhh') ///
-        mlabel(lab_hwhh) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("Home w/ HH", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_hwhh_group4, replace)
-
-twoway ///
-    (rcap home_ci_lb home_ci_ub group_order, lcolor(`col_home') lwidth(medthick)) ///
-    (scatter home_pct group_order, msymbol(S) msize(medlarge) mcolor(`col_home') ///
-        mlabel(lab_home) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
-    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
-    ylabel(0(20)100, labsize(medsmall)) ///
-    yscale(range(0 100)) ///
-    xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("", size(medlarge)) ///
-    title("Home", size(large)) ///
-    legend(off) ///
-    scheme(`figure_scheme') ///
-    name(gr_home_group4, replace)
-
-twoway scatteri 0 0, ///
-    msymbol(i) ///
-    xscale(range(0 1) noline) ///
-    yscale(range(0 1) noline) ///
-    xlabel(none) ylabel(none) ///
-    xtitle("") ytitle("") ///
-    text(0.72 0.03 "`figure_note_levels_1'", place(w) size(small)) ///
-    text(0.48 0.03 "`figure_note_levels_2'", place(w) size(small)) ///
-    legend(off) ///
-    plotregion(margin(zero) lcolor(none)) ///
     graphregion(color(white) margin(small)) ///
+    plotregion(margin(small) lcolor(none)) ///
     scheme(`figure_scheme') ///
-    name(gr_group4_note, replace)
-
-graph combine ///
-    gr_day_group4 gr_ltac_group4 ///
-    gr_imv_group4 gr_snf_group4 ///
-    gr_dec_group4 gr_hwhh_group4 ///
-    gr_group4_note gr_home_group4, ///
-    cols(2) xsize(11.2) ysize(10.8) ///
-    imargin(small) ///
     name(gr_group4_milestones, replace)
-quietly _export_graph_tiff, graphname(gr_group4_milestones) ///
+
+use `discharge_tbl', clear
+sort category_order group_order
+twoway ///
+    (rcap ci_lb ci_ub x_pos if group_order == 1, lcolor(`col_g1') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 1, msymbol(`sym_g1') msize(large) mcolor(`col_g1')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 2, lcolor(`col_g2') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 2, msymbol(`sym_g2') msize(large) mcolor(`col_g2')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 3, lcolor(`col_g3') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 3, msymbol(`sym_g3') msize(large) mcolor(`col_g3')) ///
+    (rcap ci_lb ci_ub x_pos if group_order == 4, lcolor(`col_g4') lwidth(medium)) ///
+    (scatter pct x_pos if group_order == 4, msymbol(`sym_g4') msize(vlarge) mcolor(`col_g4')), ///
+    xlabel(1 "LTAC" 2 "SNF" 3 "Home w/ HH" 4 "Home", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(small)) ///
+    yscale(range(-12 100)) ///
+    xscale(range(0.5 4.5)) ///
+    xtitle("") ///
+    ytitle("Observed discharge (%)", size(large)) ///
+    title("Discharge disposition", size(vlarge)) ///
+    text(`strata_lab_y_hi' 0.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 0.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 1.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 1.24 "C7-8", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 1.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 1.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 2.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 2.24 "C7-8", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 2.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 2.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 3.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 3.24 "C7-8", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 3.76 "C1-2", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 3.92 "C3-4", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_hi' 4.08 "C5-6", place(c) size(small) color(black)) ///
+    text(`strata_lab_y_lo' 4.24 "C7-8", place(c) size(small) color(black)) ///
+    legend(off) ///
+    graphregion(color(white) margin(small)) ///
+    plotregion(margin(small) lcolor(none)) ///
+    scheme(`figure_scheme') ///
+    name(gr_group4_disposition, replace)
+
+graph combine gr_group4_milestones gr_group4_disposition, ///
+    cols(2) xsize(11.2) ysize(5.3) ///
+    imargin(vsmall) ///
+    graphregion(color(white) margin(small)) ///
+    note("`figure_note_levels_1'" "`figure_note_levels_2'", size(small) span justification(left)) ///
+    name(gr_group4_summary, replace)
+quietly _export_graph_tiff, graphname(gr_group4_summary) ///
     outfile("`results_dir'/Supplemental Figure - Milestone Rates by Finer Injury Groups.tiff") ///
-    width(3800) height(3400)
+    width(4200) height(2600)
 restore
 
 * Standalone discharge figure: one overlaid panel with slight vertical dodge so
