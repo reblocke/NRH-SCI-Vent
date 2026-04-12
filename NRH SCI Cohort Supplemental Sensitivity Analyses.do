@@ -118,7 +118,8 @@ local analytic_n = r(N)
 quietly levelsof level, local(levels_obs)
 local c8_observed = strpos(" `levels_obs' ", " 8 ")
 local level_note "Analytic cohort contains observed C2-C7 only; the C7-C8 stratum contained observed C7 cases only."
-local figure_note_levels "Raw grouped proportions; bars show 95% Wilson CIs. C7-C8 contains observed C7 only."
+local figure_note_levels_1 "Unadjusted grouped proportions; bars show 95% Wilson confidence intervals."
+local figure_note_levels_2 "Labels show n/N. C7-C8 contains observed C7 only."
 local figure_note_timing "Achievers only. Circles = patients; boxes = IQR; squares = median; whiskers = range. Values >100 days are plotted at the cap and labeled by actual time."
 local figure_note_age_1 "Points are individual patients. Shape/fill denote decannulation; lane outlines mark discharge categories."
 local figure_note_age_2 "Vertical offset is visual only."
@@ -157,6 +158,10 @@ postfile `post_grouped' ///
     day_wean_n day_wean_pct day_wean_ci_lb day_wean_ci_ub ///
     imv_n imv_pct imv_ci_lb imv_ci_ub ///
     decann_n decann_pct decann_ci_lb decann_ci_ub ///
+    ltac_n ltac_pct ltac_ci_lb ltac_ci_ub ///
+    snf_n snf_pct snf_ci_lb snf_ci_ub ///
+    hwhh_n hwhh_pct hwhh_ci_lb hwhh_ci_ub ///
+    home_n home_pct home_ci_lb home_ci_ub ///
     using `grouped_level_tbl', replace
 
 forvalues grp = 1/4 {
@@ -184,6 +189,34 @@ forvalues grp = 1/4 {
     local dec_lb = 100 * r(lb)
     local dec_ub = 100 * r(ub)
 
+    quietly count if injury_group4 == `grp' & discharge_to == 1
+    local ltac_n = r(N)
+    quietly _wilson_ci `n_total' `ltac_n'
+    local ltac_pct = 100 * r(p)
+    local ltac_lb = 100 * r(lb)
+    local ltac_ub = 100 * r(ub)
+
+    quietly count if injury_group4 == `grp' & discharge_to == 2
+    local snf_n = r(N)
+    quietly _wilson_ci `n_total' `snf_n'
+    local snf_pct = 100 * r(p)
+    local snf_lb = 100 * r(lb)
+    local snf_ub = 100 * r(ub)
+
+    quietly count if injury_group4 == `grp' & discharge_to == 3
+    local hwhh_n = r(N)
+    quietly _wilson_ci `n_total' `hwhh_n'
+    local hwhh_pct = 100 * r(p)
+    local hwhh_lb = 100 * r(lb)
+    local hwhh_ub = 100 * r(ub)
+
+    quietly count if injury_group4 == `grp' & discharge_to == 4
+    local home_n = r(N)
+    quietly _wilson_ci `n_total' `home_n'
+    local home_pct = 100 * r(p)
+    local home_lb = 100 * r(lb)
+    local home_ub = 100 * r(ub)
+
     local grp_label "C1-C2"
     if `grp' == 2 local grp_label "C3-C4"
     if `grp' == 3 local grp_label "C5-C6"
@@ -193,7 +226,11 @@ forvalues grp = 1/4 {
         ("`grp_label'") (`grp') (`n_total') ///
         (`day_n') (`day_pct') (`day_lb') (`day_ub') ///
         (`imv_n') (`imv_pct') (`imv_lb') (`imv_ub') ///
-        (`dec_n') (`dec_pct') (`dec_lb') (`dec_ub')
+        (`dec_n') (`dec_pct') (`dec_lb') (`dec_ub') ///
+        (`ltac_n') (`ltac_pct') (`ltac_lb') (`ltac_ub') ///
+        (`snf_n') (`snf_pct') (`snf_lb') (`snf_ub') ///
+        (`hwhh_n') (`hwhh_pct') (`hwhh_lb') (`hwhh_ub') ///
+        (`home_n') (`home_pct') (`home_lb') (`home_ub')
 }
 * Close the temporary results file so it can be re-opened later like a regular
 * dataset when drawing the grouped proportion figure.
@@ -343,8 +380,9 @@ quietly _export_graph_tiff, graphname(gr_exact_timing_summary) ///
     outfile("`results_dir'/Supplemental Figure - Median Days to Milestones by Exact Injury Level.tiff") ///
     width(3000) height(2400)
 
-* Grouped milestone figure: raw grouped proportions with Wilson intervals and
-* n/N labels for each finer injury-level stratum.
+* Combined grouped injury figure: milestone-achievement and discharge-
+* disposition proportions share the same finer injury-group x-axis and use the
+* same unadjusted Wilson-interval plotting grammar.
 preserve
 * Re-open the temporary grouped summary table so the plotting code below works
 * with one row per injury stratum rather than one row per patient.
@@ -352,62 +390,147 @@ use `grouped_level_tbl', clear
 generate str12 lab_day = string(day_wean_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_imv = string(imv_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 generate str12 lab_dec = string(decann_n, "%9.0f") + "/" + string(n_total, "%9.0f")
+generate str12 lab_ltac = string(ltac_n, "%9.0f") + "/" + string(n_total, "%9.0f")
+generate str12 lab_snf = string(snf_n, "%9.0f") + "/" + string(n_total, "%9.0f")
+generate str12 lab_hwhh = string(hwhh_n, "%9.0f") + "/" + string(n_total, "%9.0f")
+generate str12 lab_home = string(home_n, "%9.0f") + "/" + string(n_total, "%9.0f")
 * Push most count labels slightly to the right of the point and pull the
 * rightmost group's label to the left so it stays readable within the panel.
 generate byte lab_pos = cond(group_order == 4, 9, 3)
 
-* Each grouped panel is a two-layer plot: confidence interval bars plus a point
+local col_day "navy"
+local col_imv "teal"
+local col_dec "cranberry"
+local col_ltac "gs6"
+local col_snf "orange_red"
+local col_hwhh "forest_green"
+local col_home "purple"
+
+* Each panel is a two-layer plot: confidence interval bars plus a point
 * estimate labeled with the underlying count.
 twoway ///
-    (rcap day_wean_ci_lb day_wean_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
-    (scatter day_wean_pct group_order, msymbol(O) msize(medlarge) mcolor(black) ///
+    (rcap day_wean_ci_lb day_wean_ci_ub group_order, lcolor(`col_day') lwidth(medthick)) ///
+    (scatter day_wean_pct group_order, msymbol(O) msize(medlarge) mcolor(`col_day') ///
         mlabel(lab_day) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
     xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("Achieved milestone (%)", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
     title("Daytime ventilator wean", size(large)) ///
     legend(off) ///
     scheme(`figure_scheme') ///
     name(gr_day_group4, replace)
 
 twoway ///
-    (rcap imv_ci_lb imv_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
-    (scatter imv_pct group_order, msymbol(D) msize(medlarge) mcolor(black) ///
+    (rcap imv_ci_lb imv_ci_ub group_order, lcolor(`col_imv') lwidth(medthick)) ///
+    (scatter imv_pct group_order, msymbol(D) msize(medlarge) mcolor(`col_imv') ///
         mlabel(lab_imv) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
     xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("Achieved milestone (%)", size(medlarge)) ///
-    title("Liberation from invasive ventilation", size(large)) ///
+    ytitle("", size(medlarge)) ///
+    title("Liberation from IMV", size(large)) ///
     legend(off) ///
     scheme(`figure_scheme') ///
     name(gr_imv_group4, replace)
 
 twoway ///
-    (rcap decann_ci_lb decann_ci_ub group_order, lcolor(black) lwidth(medthick)) ///
-    (scatter decann_pct group_order, msymbol(T) msize(large) mcolor(black) ///
+    (rcap decann_ci_lb decann_ci_ub group_order, lcolor(`col_dec') lwidth(medthick)) ///
+    (scatter decann_pct group_order, msymbol(T) msize(large) mcolor(`col_dec') ///
         mlabel(lab_dec) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
     xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
     ylabel(0(20)100, labsize(medsmall)) ///
     yscale(range(0 100)) ///
     xtitle("Finer injury level group", size(medlarge)) ///
-    ytitle("Achieved milestone (%)", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
     title("Decannulation", size(large)) ///
     legend(off) ///
     scheme(`figure_scheme') ///
     name(gr_dec_group4, replace)
 
-graph combine gr_day_group4 gr_imv_group4 gr_dec_group4, ///
-    cols(1) xsize(6) ysize(10) ///
-    note("`figure_note_levels'", size(vsmall) span justification(left)) ///
+twoway ///
+    (rcap ltac_ci_lb ltac_ci_ub group_order, lcolor(`col_ltac') lwidth(medthick)) ///
+    (scatter ltac_pct group_order, msymbol(O) msize(medlarge) mcolor(`col_ltac') ///
+        mlabel(lab_ltac) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
+    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(medsmall)) ///
+    yscale(range(0 100)) ///
+    xtitle("Finer injury level group", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
+    title("LTAC", size(large)) ///
+    legend(off) ///
+    scheme(`figure_scheme') ///
+    name(gr_ltac_group4, replace)
+
+twoway ///
+    (rcap snf_ci_lb snf_ci_ub group_order, lcolor(`col_snf') lwidth(medthick)) ///
+    (scatter snf_pct group_order, msymbol(D) msize(medlarge) mcolor(`col_snf') ///
+        mlabel(lab_snf) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
+    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(medsmall)) ///
+    yscale(range(0 100)) ///
+    xtitle("Finer injury level group", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
+    title("SNF", size(large)) ///
+    legend(off) ///
+    scheme(`figure_scheme') ///
+    name(gr_snf_group4, replace)
+
+twoway ///
+    (rcap hwhh_ci_lb hwhh_ci_ub group_order, lcolor(`col_hwhh') lwidth(medthick)) ///
+    (scatter hwhh_pct group_order, msymbol(Th) msize(large) mcolor(`col_hwhh') ///
+        mlabel(lab_hwhh) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
+    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(medsmall)) ///
+    yscale(range(0 100)) ///
+    xtitle("Finer injury level group", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
+    title("Home w/ HH", size(large)) ///
+    legend(off) ///
+    scheme(`figure_scheme') ///
+    name(gr_hwhh_group4, replace)
+
+twoway ///
+    (rcap home_ci_lb home_ci_ub group_order, lcolor(`col_home') lwidth(medthick)) ///
+    (scatter home_pct group_order, msymbol(S) msize(medlarge) mcolor(`col_home') ///
+        mlabel(lab_home) mlabsize(small) mlabcolor(black) mlabvposition(lab_pos) mlabgap(vsmall)), ///
+    xlabel(1 "C1-C2" 2 "C3-C4" 3 "C5-C6" 4 "C7-C8", labsize(medsmall)) ///
+    ylabel(0(20)100, labsize(medsmall)) ///
+    yscale(range(0 100)) ///
+    xtitle("Finer injury level group", size(medlarge)) ///
+    ytitle("", size(medlarge)) ///
+    title("Home", size(large)) ///
+    legend(off) ///
+    scheme(`figure_scheme') ///
+    name(gr_home_group4, replace)
+
+twoway scatteri 0 0, ///
+    msymbol(i) ///
+    xscale(range(0 1) noline) ///
+    yscale(range(0 1) noline) ///
+    xlabel(none) ylabel(none) ///
+    xtitle("") ytitle("") ///
+    text(0.72 0.03 "`figure_note_levels_1'", place(w) size(small)) ///
+    text(0.48 0.03 "`figure_note_levels_2'", place(w) size(small)) ///
+    legend(off) ///
+    plotregion(margin(zero) lcolor(none)) ///
+    graphregion(color(white) margin(small)) ///
+    scheme(`figure_scheme') ///
+    name(gr_group4_note, replace)
+
+graph combine ///
+    gr_day_group4 gr_ltac_group4 ///
+    gr_imv_group4 gr_snf_group4 ///
+    gr_dec_group4 gr_hwhh_group4 ///
+    gr_group4_note gr_home_group4, ///
+    cols(2) xsize(11.2) ysize(10.8) ///
     imargin(small) ///
     name(gr_group4_milestones, replace)
 quietly _export_graph_tiff, graphname(gr_group4_milestones) ///
     outfile("`results_dir'/Supplemental Figure - Milestone Rates by Finer Injury Groups.tiff") ///
-    width(2700) height(3300)
+    width(3800) height(3400)
 restore
 
 * Standalone discharge figure: one overlaid panel with slight vertical dodge so
