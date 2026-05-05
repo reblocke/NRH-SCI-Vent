@@ -60,28 +60,64 @@ program define _wilson_ci, rclass
     return scalar ub = min(1, `center' + `half')
 end
 
-* Export TIFF directly when Stata can; otherwise fall back to PDF plus `sips`
-* so the workflow still produces publication-ready raster files on macOS.
+* Export TIFF directly when Stata can; otherwise fall back to PNG plus `sips`
+* so the workflow preserves requested pixel dimensions and 300 DPI metadata.
 program define _export_graph_tiff
-    syntax, GRAPHNAME(name) OUTFILE(string asis) [WIDTH(integer 2400) HEIGHT(integer 1800)]
+    syntax, GRAPHNAME(name) OUTFILE(string asis) [WIDTH(integer 2400) HEIGHT(integer 1800) DPI(integer 300)]
 
-    tempfile pdffile
-    local pdffile "`pdffile'.pdf"
+    tempfile pngfile tag_marker convert_marker validate_marker
+    local pngfile "`pngfile'.png"
+    local tag_marker "`tag_marker'.ok"
+    local convert_marker "`convert_marker'.ok"
+    local validate_marker "`validate_marker'.ok"
     local outfile_clean = subinstr(`"`outfile'"', `"""', "", .)
 
     graph display `graphname'
     capture noisily graph export "`outfile_clean'", as(tif) replace width(`width') height(`height')
     if _rc {
         local tif_rc = _rc
-        di as txt "TIFF translator unavailable or failed (rc=`tif_rc'); exporting PDF and converting with sips."
-        graph export `"`pdffile'"', as(pdf) replace
-        shell sips -s format tiff "`pdffile'" --out "`outfile_clean'"
-        capture confirm file "`outfile_clean'"
+        di as txt "TIFF translator unavailable or failed (rc=`tif_rc'); exporting PNG and converting with sips."
+        capture noisily graph export "`pngfile'", as(png) replace width(`width') height(`height')
+        if _rc {
+            di as err "Fallback PNG export failed after graph export rc=`tif_rc'."
+            exit 111
+        }
+        capture erase "`outfile_clean'"
+        capture erase "`convert_marker'"
+        shell sips -s format tiff "`pngfile'" --out "`outfile_clean'" >/dev/null && touch "`convert_marker'"
+        capture confirm file "`convert_marker'"
         if _rc {
             di as err "Fallback TIFF conversion failed after graph export rc=`tif_rc'."
             exit 111
         }
     }
+
+    capture confirm file "`outfile_clean'"
+    if _rc {
+        di as err "TIFF export did not create expected output file: `outfile_clean'"
+        exit 111
+    }
+
+    capture erase "`tag_marker'"
+    shell sips -s dpiWidth `dpi' -s dpiHeight `dpi' "`outfile_clean'" >/dev/null && touch "`tag_marker'"
+    capture confirm file "`tag_marker'"
+    if _rc {
+        di as err "Failed to set `dpi' DPI metadata on TIFF output: `outfile_clean'"
+        exit 112
+    }
+
+    capture erase "`validate_marker'"
+    shell sips -g pixelWidth "`outfile_clean'" | grep -q "pixelWidth: `width'" && sips -g pixelHeight "`outfile_clean'" | grep -q "pixelHeight: `height'" && sips -g dpiWidth "`outfile_clean'" | grep -q "dpiWidth: `dpi'.000" && sips -g dpiHeight "`outfile_clean'" | grep -q "dpiHeight: `dpi'.000" && touch "`validate_marker'"
+    capture confirm file "`validate_marker'"
+    if _rc {
+        di as err "TIFF metadata validation failed for `outfile_clean'."
+        di as err "Expected width=`width', height=`height', dpi=`dpi'."
+        shell sips -g pixelWidth -g pixelHeight -g dpiWidth -g dpiHeight "`outfile_clean'"
+        exit 112
+    }
+
+    di as txt "Validated TIFF export:"
+    shell sips -g pixelWidth -g pixelHeight -g dpiWidth -g dpiHeight "`outfile_clean'"
 end
 
 use "`project_root'/nrh-sci-cleaned.dta", clear
