@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: >-
-  If you use this repository, please cite the software. The frozen manuscript
-  snapshot is GitHub release v0.1.0. When the paper is accepted and an archive
-  DOI has been minted for that release, prefer citing the article and the
-  archived code release DOI that matches it.
+  If you use this repository, please cite the final Respiratory Care article
+  and the GitHub release matching the code you used. Release v0.2.0 contains
+  the final paper code and the supplemental analyses used for the published
+  author response.
 title: NRH-SCI-Vent
 type: software
 authors:
@@ -38,16 +38,18 @@ keywords:
   - tracheostomy
   - rehabilitation
   - Stata
-version: "v0.1.0"
-date-released: "2026-04-04"
+version: "v0.2.0"
+date-released: "2026-05-30"
 identifiers:
   - type: url
-    value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0
+    value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
   - type: url
-    value: https://journal.chestnet.org/article/S0012-3692(23)05014-6/abstract
+    value: https://doi.org/10.1177/19433654261428406
+  - type: url
+    value: https://doi.org/10.1177/19433654261450544
 preferred-citation:
   type: article
-  title: "Predictors of Ventilator Weaning and Discharge Outcomes in Cervical Spinal Cord Injury Subjects: A Retrospective Analysis"
+  title: "Post-Acute Ventilator Weaning and Discharge Outcomes in Individuals With Cervical Spinal Cord Injury"
   authors:
     - family-names: Fenger
       given-names: Casey
@@ -69,6 +71,11 @@ preferred-citation:
       given-names: Jeffrey
     - family-names: Brown
       given-names: Jeanette P.
-  year: 2025
-  journal: "(under review)"
-  notes: "Use this placeholder until a DOI and journal details are available."
+  year: 2026
+  journal: "Respiratory Care"
+  volume: 71
+  issue: 4
+  start: 351
+  end: 357
+  doi: "10.1177/19433654261428406"
+  url: "https://doi.org/10.1177/19433654261428406"

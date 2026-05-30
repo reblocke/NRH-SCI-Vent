@@ -4,14 +4,16 @@
 
 **Links & IDs**
 - Repository: https://github.com/reblocke/NRH-SCI-Vent
-- Manuscript snapshot release: [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
-- Latest analysis commit used for the manuscript: `b437708ea58aba0f4da0afe73e54f64de423b7d2` (2025‑09‑29)
-- Manuscript: *in review* (no DOI yet). Working title: **Predictors of Ventilator Weaning and Discharge Outcomes in Cervical Spinal Cord Injury Subjects: A Retrospective Analysis**.
+- Paper and author-response code release: [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
+- Original manuscript snapshot release: [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
+- Latest analysis commit used for the final paper: `b437708ea58aba0f4da0afe73e54f64de423b7d2` (2025‑09‑29)
+- Final article: Fenger C, Locke BW, Barker J, et al. **Post-Acute Ventilator Weaning and Discharge Outcomes in Individuals With Cervical Spinal Cord Injury.** *Respiratory Care*. 2026;71(4):351-357. https://doi.org/10.1177/19433654261428406
+- Author response: Fenger C, Locke B, Brown J. **Letter: Author Response to Letter to the Editor from Luo et al.** *Respiratory Care*. OnlineFirst. First published May 11, 2026. https://doi.org/10.1177/19433654261450544
 - Related abstract (CHEST 2023): *Just keep trying: Prior attempts at weaning do not determine eventual liberation from tracheostomy and mechanical ventilation in high-level spinal cord patients.*
 - Statistical software: **Stata 18** (StataCorp, College Station, TX).
 
 ## Cite this work
-Please cite the **software** until the article is accepted and has a DOI. The frozen manuscript snapshot is GitHub release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0), which points to the exact analysis commit documented above. See [`CITATION.cff`](./CITATION.cff) for citation metadata you can paste into your reference manager. When the paper is published and an archive DOI has been minted for this release, prefer citing the article and that exact archived code release DOI.
+Please cite the final **Respiratory Care** article for the primary paper and cite this repository when referencing the analysis code. GitHub release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) contains the final paper code plus the supplemental analyses used for the author response. The earlier frozen manuscript snapshot remains available as [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0). See [`CITATION.cff`](./CITATION.cff) for citation metadata you can paste into your reference manager.
 
 ## Quick start (reproduce the main results)
 
@@ -31,6 +33,7 @@ cd NRH-SCI-Vent
 ```sh
 stata-mp -b do "NRH SCI Cohort Preprocessing.do"
 stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
+stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
 # or use 'stata-se' / 'stata' depending on your license
 ```
 On completion, figures and tables will be written under `Results and Figures/<date>/`.
@@ -45,6 +48,24 @@ The analysis script exports (filenames may be updated as wording evolves):
 
 (Figure 1 was generated separately)
 
+### Author-response supplemental analyses
+`NRH SCI Cohort Supplemental Sensitivity Analyses.do` documents the supplemental analyses and figures generated for the published author response. It recreates the paper-matched analytic cohort from the restricted cleaned dataset, writes response-focused figures and a compact correspondence table, and records the run log.
+
+Run it from Stata 18 after the cleaned analysis dataset is available:
+```sh
+stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
+```
+
+Expected response outputs are written under `Results and Figures/<date>/`:
+- `Supplemental Figure - Median Days to Milestones by Exact Injury Level.tiff`
+- `Supplemental Figure - Milestone Rates by Finer Injury Groups.tiff`
+- `Supplemental Figure - Observed Discharge Disposition by Age, Split by Decannulation.tiff`
+- `Supplemental Figure - Discharge by Age Among Decannulated Patients.tiff`
+- `Correspondence Table - Adjusted Home Discharge Probabilities by Milestone and Age.csv`
+- `Logs/supplemental_sensitivity_analyses.log`
+
+The response analyses require the same restricted dataset as the paper analyses. Source data and generated outputs are not tracked in this public repository.
+
 ## Data access & ethics
 - **Population**: Adults with CSCI admitted 2015–2022 to rehabilitation on continuous IMV via tracheostomy.
 - **IRB**: University of Utah IRB **#00153003**; retrospective, exempt category.
@@ -54,6 +75,8 @@ The analysis script exports (filenames may be updated as wording evolves):
 ```
 ├── NRH SCI Cohort Preprocessing.do      # Prepares analysis dataset(s) and helper variables
 ├── NRH SCI Cohort Paper Analysis.do     # Produces tables/figures and model outputs
+├── NRH SCI Cohort Supplemental Sensitivity Analyses.do
+│                                          # Produces author-response supplemental outputs
 ├── Results and Figures/                 # Created on first run; contains outputs by date
 └── LICENSE                              # Code license (MIT)
 ```
@@ -61,8 +84,11 @@ The analysis script exports (filenames may be updated as wording evolves):
 ## Workflow
 1. `NRH SCI Cohort Preprocessing.do` — reads the source analysis dataset(s), constructs analysis variables, and writes intermediate files as needed.
 2. `NRH SCI Cohort Paper Analysis.do` — fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
+3. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — generates the supplemental figures, correspondence table, and model log used to support the published author response.
 
 ## Paper ↔ code mapping
+Release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0) is the original manuscript snapshot. Release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) contains the final paper code and author-response supplemental-analysis code.
+
 | Paper item | Script | Command/section | Output |
 |---|---|---|---|
 | Fig 2: Time-course of ventilator-weaning milestones | `NRH SCI Cohort Paper Analysis.do` | `stackedcount state day, ...` | `Fig 2 - stacked_states.tiff` |
@@ -70,6 +96,10 @@ The analysis script exports (filenames may be updated as wording evolves):
 | Supp CIFs: day-wean / liberation / decannulation | `NRH SCI Cohort Paper Analysis.do` | `stcurve, cif ...` + export | `Supp Figure - CIFs for milestones.tiff` |
 | Fig 4: Mortality Kaplan–Meier | `NRH SCI Cohort Paper Analysis.do` | `sts graph ...` + export | `Figure 4 - KMs for death.tiff` |
 | Flow diagram (Fig 1) | external diagram tool | (not generated by code) | (see manuscript) |
+| Author response: milestone timing by exact injury level | `NRH SCI Cohort Supplemental Sensitivity Analyses.do` | exact-level milestone timing figure block | `Supplemental Figure - Median Days to Milestones by Exact Injury Level.tiff` |
+| Author response: milestone rates by finer injury groups | `NRH SCI Cohort Supplemental Sensitivity Analyses.do` | grouped injury-level milestone figure block | `Supplemental Figure - Milestone Rates by Finer Injury Groups.tiff` |
+| Author response: age, decannulation, and discharge | `NRH SCI Cohort Supplemental Sensitivity Analyses.do` | observed age/discharge figure blocks | `Supplemental Figure - Observed Discharge Disposition by Age, Split by Decannulation.tiff`; `Supplemental Figure - Discharge by Age Among Decannulated Patients.tiff` |
+| Author response: adjusted home-discharge probabilities | `NRH SCI Cohort Supplemental Sensitivity Analyses.do` | milestone-adjusted discharge model and margins block | `Correspondence Table - Adjusted Home Discharge Probabilities by Milestone and Age.csv` |
 
 ## Definitions used in this project
 - **Weaning**: withdrawal of ventilator support over time.

@@ -17,4 +17,4 @@ We will acknowledge receipt within a reasonable timeframe and coordinate a fix.
 ## Data handling
 - Do **not** upload raw data, intermediate data, or any files that could contain identifiers.
 - Ensure any shared example datasets are **synthetic** or fully de‑identified according to your IRB or institutional policy.
-- Generated outputs may be copyright‑restricted once the manuscript is published; please check journal policies before redistribution.
+- Generated outputs may be copyright-restricted; please check journal policies before redistribution.

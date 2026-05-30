@@ -1,7 +1,7 @@
-* Supplemental figure generation for the NRH SCI cohort paper.
+* Supplemental figure generation for the NRH SCI cohort author response.
 * Recreates the paper-matched cohort from nrh-sci-cleaned.dta and writes the
-* retained publication figures, one exploratory subgroup figure, one compact
-* correspondence table, and the run log.
+* retained response figures, one exploratory subgroup figure, one compact
+* correspondence table, and the run log supporting the published letter reply.
 
 version 18
 clear all
