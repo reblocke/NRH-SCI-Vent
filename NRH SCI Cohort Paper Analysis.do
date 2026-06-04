@@ -1,23 +1,38 @@
 * NRH SCI Cohort Analysis
 
+version 18
 clear
-cd "/Users/blocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/NRH SCI Data" //Mac
+set more off
+capture log close
+
+args data_dir output_root
+if "`data_dir'" == "" local data_dir "Data"
+if "`output_root'" == "" local output_root "Results and Figures"
 
 program define datetime 
 end
 
-capture mkdir "Results and Figures"
-capture mkdir "Results and Figures/$S_DATE/" //make new folder for figure output if needed
-capture mkdir "Results and Figures/$S_DATE/Logs/" //new folder for stata logs
+capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
+if _rc {
+    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
+    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
+    exit 601
+}
+
+local results_dir "`output_root'/$S_DATE"
+local log_dir "`results_dir'/Logs"
+
+capture mkdir "`output_root'"
+capture mkdir "`results_dir'" //make new folder for figure output if needed
+capture mkdir "`log_dir'" //new folder for stata logs
 
 * Data Analysis
 
 clear
-capture log close
-log using "Results and Figures/$S_DATE/Logs/temp.log", append
+log using "`log_dir'/paper_analysis.log", replace text
 
 clear
-use nrh-sci-cleaned
+use "`data_dir'/nrh-sci-cleaned.dta", clear
 
 /* Analysis: 
 Exposure: Age, Injury (high vs low), Completeness (high vs low) 
@@ -46,7 +61,7 @@ daysfromintubationtotrach conts %4.0f \ ///
 daysfrominjurytoadmissiontorehab conts %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
-saving("Results and Figures/$S_DATE/Table 1 - PreRehab.xlsx", replace)
+saving("`results_dir'/Table 1 - PreRehab.xlsx", replace)
 
 //Overall weaning course
 table1_mc, ///
@@ -61,7 +76,7 @@ daysfromadmissiontorehabtodecanu conts %4.0f \ ///
 discharge_to cat %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol total(before) ///
-saving("Results and Figures/$S_DATE/Table aux - Rehab milestones overall.xlsx", replace)
+saving("`results_dir'/Table aux - Rehab milestones overall.xlsx", replace)
 
 /* 
 Table: Discharge Location, Weaning Status by Injury 
@@ -75,7 +90,7 @@ discharge_to cat %4.0f \ ///
 death bin %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
-saving("Results and Figures/$S_DATE/Table 2a - Outcomes by Level.xlsx", replace)
+saving("`results_dir'/Table 2a - Outcomes by Level.xlsx", replace)
 
 /* 
 Table: Discharge Locations by weaning cat
@@ -87,7 +102,7 @@ discharge_to cat %4.0f \ ///
 death bin %4.0f \ ///
 ) ///
 total(before) percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
-saving("Results and Figures/$S_DATE/Table 2b - Outcomes by Weaning Cat.xlsx", replace)
+saving("`results_dir'/Table 2b - Outcomes by Weaning Cat.xlsx", replace)
 
 
 /*****************************************************************
@@ -133,7 +148,7 @@ stackedcount state day, ///
 	legend(rows(8) position(9) size(small)) ///
     scheme(white_w3d)
 
-graph export "Results and Figures/$S_DATE/Fig 2 - stacked_states.tiff", as(tif) replace ///
+graph export "`results_dir'/Fig 2 - stacked_states.tiff", as(tif) replace ///
     width(2700) height(1500)
 restore
 
@@ -177,8 +192,8 @@ lwidth(thick thick)                                             ///
 	xlabel(0(10)80, labsize(medlarge)) ///
 	ylabel(0(.1)1, labsize(medlarge)) ///
 	range(0 80) 
-//graph export "Results and Figures/$S_DATE/CIF_DayWean_Level.tiff", as(tif) replace
-graph save "CIF_day_wean.gph", replace
+//graph export "`results_dir'/CIF_DayWean_Level.tiff", as(tif) replace
+graph save "`results_dir'/CIF_day_wean.gph", replace
 restore
 
 /* "Survival" Until 24H Wean */
@@ -209,8 +224,8 @@ stcurve, cif at1(high_vs_low=2) at2(high_vs_low=1)                  ///
         xlabel(0(10)80, labsize(medlarge))                          ///
         ylabel(0(.1)1, labsize(medlarge))                           ///
         range(0 80)    
-//graph export "Results and Figures/${S_DATE}/CIF_24hrWean_Level.png", as(png) replace
-graph save "CIF_24_wean.gph", replace
+//graph export "`results_dir'/CIF_24hrWean_Level.png", as(png) replace
+graph save "`results_dir'/CIF_24_wean.gph", replace
 restore
 
 
@@ -246,14 +261,14 @@ stcurve, cif at1(high_vs_low=2) at2(high_vs_low=1)                  ///
         range(0 80)
 
 // export figure
-//graph export "Results and Figures/${S_DATE}/CIF_Decannulation_Level.png", as(png) replace
-graph save "CIF_decannulation.gph", replace
+//graph export "`results_dir'/CIF_Decannulation_Level.png", as(png) replace
+graph save "`results_dir'/CIF_decannulation.gph", replace
 restore
 
-graph combine CIF_day_wean.gph CIF_24_wean.gph CIF_decannulation.gph, ///
+graph combine "`results_dir'/CIF_day_wean.gph" "`results_dir'/CIF_24_wean.gph" "`results_dir'/CIF_decannulation.gph", ///
 	cols(1) /// 
 	xsize(5) ysize(10)
-graph export "Results and Figures/$S_DATE/Supp Figure - CIFs for milestones.tiff", as(tif) replace
+graph export "`results_dir'/Supp Figure - CIFs for milestones.tiff", as(tif) replace
 
 
 /*
@@ -267,7 +282,7 @@ ologit discharge_to c.age_decade i.comp_vs_part i.high_vs_low, or
 estimates store ord_discharge_to_reg
 
 coefplot ord_weaning_outcome_reg, bylabel("Weaning Outcome") || ord_discharge_to_reg, bylabel("Discharge Location") ||, eform xscale(log) xline(1) xlabel(0.25 0.5 1 2 4 8 16) xscale(extend) xtitle("Odds Ratio of a better weaning or discharge category" , size(small)) yscale(extend) ciopts(recast(rcap) lwidth(thick)) mlabel(string(@b,"%9.2f") + " [ " + string(@ll,"%9.2f") + " - " + string(@ul,"%9.2f") + " ] " + cond(@pval<.001, "***", cond(@pval<.01, "**", cond(@pval<.05, "*", "")))) mlabsize(medsmall) mlabposition(12) mlabgap(*1) headings(age_decade = "{bf:Age}" 2.comp_vs_part = "{bf:Injury} (vs complete)" 2.high_vs_low = "{bf:Level} (vs High)") scheme(white_tableau) text(3 0.5 "Favors Worse" "Category" 3 5.0 "Favors Better" "Category", size(small) color(gs9))
-graph export "Results and Figures/$S_DATE/Fig 3 - Ordinal Regressions.tiff", as(tif) name("Graph") replace
+graph export "`results_dir'/Fig 3 - Ordinal Regressions.tiff", as(tif) name("Graph") replace
 
 
 /* Supplemental Figure - does weaning status influence discharge location? */ 
@@ -275,7 +290,7 @@ graph export "Results and Figures/$S_DATE/Fig 3 - Ordinal Regressions.tiff", as(
 ologit discharge_to ib1.weaning_outcome c.age, or
 estimates store age_adj_wean_to_discharge
 coefplot age_adj_wean_to_discharge, eform xscale(log) xline(1) xlabel(0.061 0.125 0.25 0.5 1 2 4 8 16 32 64 128) xscale(extend) xtitle("Odds Ratio of a lower level of care (LOC) discharge location" , size(small)) yscale(extend) ciopts(recast(rcap) lwidth(thick)) mlabel(string(@b,"%9.2f") + " [ " + string(@ll,"%9.2f") + " - " + string(@ul,"%9.2f") + " ] " + cond(@pval<.001, "***", cond(@pval<.01, "**", cond(@pval<.05, "*", "")))) mlabsize(medsmall) mlabposition(12) mlabgap(*1) scheme(white_tableau) text(5 0.11 "Favors Higher" "LOC Discharge" 5 9.9 "Favors Lower" "LOC Discharge", size(small) color(gs9)) headings(age = "{bf:Age} (per add'n year)" 2.weaning_outcome = "{bf:Weaning Outcome?} (vs 24h Vent)")
-graph export "Results and Figures/$S_DATE/Supplement - Dispo by Weaning Status Regression.tiff", as(tif) name("Graph") replace
+graph export "`results_dir'/Supplement - Dispo by Weaning Status Regression.tiff", as(tif) name("Graph") replace
 
 
 /* 
@@ -289,7 +304,7 @@ time_to_censor_death conts %4.0f \ ///
 time_to_censor_death_dc conts %4.0f \ ///
 ) ///
 percent_n percsign("%") iqrmiddle(",") sdleft(" (±") sdright(")") onecol ///
-saving("Results and Figures/$S_DATE/Supplement - Outcome and discharge by Death Status.xlsx", replace)
+saving("`results_dir'/Supplement - Outcome and discharge by Death Status.xlsx", replace)
 
 //Figure 4 Mortality outcomes
 
@@ -307,8 +322,8 @@ sts graph, by(discharge_to) tmax(2190) ///
  ytitle("Survival", size(medlarge)) ///
  legend(order(1 "LTAC" 2 "SNF" 3 "Home w HH" 4 "Home") position(4) ring(0) rows(2) size(medsmall)) ///
  title("Mortality by Discharge Location", size(large))
-//graph export "Results and Figures/$S_DATE/Supp - KM Death by Dispo.png", as(png) name("Graph") replace
-graph save "KM_death_by_dispo.gph", replace
+//graph export "`results_dir'/Supp - KM Death by Dispo.png", as(png) name("Graph") replace
+graph save "`results_dir'/KM_death_by_dispo.gph", replace
 stcox ib1.discharge_to 
 
 
@@ -325,14 +340,13 @@ sts graph, by(weaning_outcome) tmax(2190) ///
  ytitle("Survival", size(medlarge)) ///
  legend(order(1 "Full Vent" 2 "Noct Vent" 3 "No Vent" 4 "Decannulated") position(4) ring(0) rows(2) size(medsmall)) ///
  title("Mortality by Weaning Milestone", size(large))
-//graph export "Results and Figures/$S_DATE/Supp - KM Death by Wean.png", as(png) name("Graph") replace
-graph save "KM_death_by_wean.gph", replace
+//graph export "`results_dir'/Supp - KM Death by Wean.png", as(png) name("Graph") replace
+graph save "`results_dir'/KM_death_by_wean.gph", replace
 stcox ib1.weaning_outcome
 
-graph combine KM_death_by_dispo.gph KM_death_by_wean.gph, ///
+graph combine "`results_dir'/KM_death_by_dispo.gph" "`results_dir'/KM_death_by_wean.gph", ///
 	cols(2) /// 
 	xsize(10) ysize(5)
-graph export "Results and Figures/$S_DATE/Figure 4 - KMs for death.tiff", as(tif) replace
+graph export "`results_dir'/Figure 4 - KMs for death.tiff", as(tif) replace
 
 log close
-

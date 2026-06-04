@@ -9,7 +9,6 @@ type: software
 authors:
   - family-names: Fenger
     given-names: Casey
-    orcid: https://orcid.org/0009-0004-4855-733
   - family-names: Locke
     given-names: Brian W.
     orcid: https://orcid.org/0000-0002-3588-5238
@@ -31,6 +30,7 @@ authors:
     given-names: Jeanette P.
     orcid: https://orcid.org/0009-0009-8407-4034
 repository-code: "https://github.com/reblocke/NRH-SCI-Vent"
+url: "https://github.com/reblocke/NRH-SCI-Vent"
 license: MIT
 keywords:
   - spinal cord injury
@@ -38,6 +38,7 @@ keywords:
   - tracheostomy
   - rehabilitation
   - Stata
+  - clinical research
 version: "v0.2.0"
 date-released: "2026-05-30"
 identifiers:
@@ -45,6 +46,8 @@ identifiers:
     value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
   - type: url
     value: https://doi.org/10.1177/19433654261428406
+  - type: url
+    value: https://pubmed.ncbi.nlm.nih.gov/41823210/
   - type: url
     value: https://doi.org/10.1177/19433654261450544
 preferred-citation:
@@ -79,3 +82,6 @@ preferred-citation:
   end: 357
   doi: "10.1177/19433654261428406"
   url: "https://doi.org/10.1177/19433654261428406"
+  identifiers:
+    - type: url
+      value: https://pubmed.ncbi.nlm.nih.gov/41823210/

@@ -1,0 +1,28 @@
+# Local operating-system and editor files
+.DS_Store
+.Rhistory
+.RData
+.Rproj.user/
+.idea/
+.vscode/
+
+# Restricted or generated study data
+Data/
+*.dta
+*.ster
+
+# Stata logs, graphs, and temporary files
+*.log
+*.smcl
+*.gph
+*.tmp
+*.stswp
+
+# Generated analysis outputs
+Results and Figures/
+*.tif
+*.tiff
+*.png
+*.xlsx
+*.csv
+!data_dictionary.csv
