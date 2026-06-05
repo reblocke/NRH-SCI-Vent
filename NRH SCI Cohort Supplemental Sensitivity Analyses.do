@@ -8,32 +8,27 @@ clear all
 set more off
 capture log close
 
-* Resolve the project root relative to the do-file launch location so the script
-* can be run from `NRH SCI Data` or from `NRH-SCI-Vent`.
-local project_root ""
-foreach candidate in "." ".." {
-    capture confirm file "`candidate'/nrh-sci-cleaned.dta"
-    if !_rc {
-        local project_root "`candidate'"
-        continue, break
-    }
-}
+args data_dir output_root
+if "`data_dir'" == "" local data_dir "Data"
+if "`output_root'" == "" local output_root "Results and Figures"
 
-if "`project_root'" == "" {
-    di as err "Could not find nrh-sci-cleaned.dta in the current directory or one level up."
+capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
+if _rc {
+    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
+    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
     exit 601
 }
 
-local results_dir "`project_root'/Results and Figures/$S_DATE"
+local results_dir "`output_root'/$S_DATE"
 local log_dir "`results_dir'/Logs"
 
-capture mkdir "`project_root'/Results and Figures"
+capture mkdir "`output_root'"
 capture mkdir "`results_dir'"
 capture mkdir "`log_dir'"
 
 log using "`log_dir'/supplemental_sensitivity_analyses.log", replace text
 
-di as txt "Resolved project root: `project_root'"
+di as txt "Resolved data directory: `data_dir'"
 di as txt "Results directory: `results_dir'"
 
 * Wilson intervals behave better than simple Wald intervals in these small
@@ -120,7 +115,7 @@ program define _export_graph_tiff
     shell sips -g pixelWidth -g pixelHeight -g dpiWidth -g dpiHeight "`outfile_clean'"
 end
 
-use "`project_root'/nrh-sci-cleaned.dta", clear
+use "`data_dir'/nrh-sci-cleaned.dta", clear
 
 * Validate only the variables needed for the retained figures and the new
 * exploratory decannulated-subgroup model block.

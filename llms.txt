@@ -1,0 +1,53 @@
+# NRH-SCI-Vent
+
+## Purpose
+Public Stata analysis repository for the cervical spinal cord injury ventilator-weaning cohort study at the University of Utah Craig H. Neilsen Rehabilitation Hospital.
+
+Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S, Flis A, Park K, Rosenbluth J, Brown JP. Post-Acute Ventilator Weaning and Discharge Outcomes in Individuals With Cervical Spinal Cord Injury. Respiratory Care. 2026;71(4):351-357.
+
+## Canonical identifiers
+- Repository: https://github.com/reblocke/NRH-SCI-Vent
+- Final article DOI: https://doi.org/10.1177/19433654261428406
+- PubMed: https://pubmed.ncbi.nlm.nih.gov/41823210/
+- Paper and author-response code release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
+- Original manuscript snapshot release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0
+- Author response DOI: https://doi.org/10.1177/19433654261450544
+
+## What is in this repository
+- `NRH SCI Cohort Preprocessing.do`: imports the restricted source CSV, creates Stata analysis datasets, and derives analytic variables.
+- `NRH SCI Cohort Paper Analysis.do`: produces the paper tables, figures, proportional-odds models, Fine-Gray competing-risk models, and Kaplan-Meier outputs.
+- `NRH SCI Cohort Supplemental Sensitivity Analyses.do`: produces the supplemental figures and correspondence table used in the published author response.
+- `README.md`: human-readable project overview, run instructions, article links, and paper-code mapping.
+- `CITATION.cff`: software and preferred article citation metadata.
+- `data_dictionary.md` and `data_dictionary.csv`: public documentation of expected restricted inputs, derived analysis variables, outputs, and review flags.
+- `AGENTS.md`: repository-specific instructions for future coding agents.
+
+## Data restrictions
+The source data are restricted retrospective EHR data governed by University of Utah IRB #00153003. Do not commit PHI, row-level clinical data, cleaned analysis datasets, intermediate `.dta` files, logs containing identifiers, or generated output folders. The ignored `Data/` directory is the default local location for private inputs and private generated Stata datasets.
+
+## Default run order
+Run from the repository root after placing the restricted source CSV at `Data/Working NRH SCI.csv`:
+
+```bash
+stata-mp -b do "NRH SCI Cohort Preprocessing.do"
+stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
+stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
+```
+
+Optional arguments are `data_dir` and `output_root`, for example:
+
+```bash
+stata-mp -b do "NRH SCI Cohort Paper Analysis.do" Data "Results and Figures"
+```
+
+## Expected outputs
+- Private generated datasets: `Data/nrh-sci-raw.dta`, `Data/nrh-sci-cleaned.dta`.
+- Publication outputs: dated folders under `Results and Figures/<date>/`.
+- Logs: `Results and Figures/<date>/Logs/`.
+- Generated outputs are not tracked in git.
+
+## Agent cautions
+- Preserve the legacy analysis logic unless a future task explicitly asks for scientific refactoring.
+- Link to the open-access SAGE article and PubMed record; do not mirror full article text in the repository.
+- Keep README, `llms.txt`, `CITATION.cff`, `AGENTS.md`, and data dictionary metadata synchronized after article, release, or workflow changes.
+- Run `git diff --check`, parse `CITATION.cff`, and search for hard-coded local paths before publishing changes.

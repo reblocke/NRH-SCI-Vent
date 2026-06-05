@@ -1,24 +1,39 @@
 //NRH SCI Cohort Preprocessing
 
+version 18
 clear
-cd "/Users/blocke/Box Sync/Residency Personal Files/Scholarly Work/Locke Research Projects/NRH SCI Data/" 
+set more off
+capture log close
+
+args data_dir output_root
+if "`data_dir'" == "" local data_dir "Data"
+if "`output_root'" == "" local output_root "Results and Figures"
 
 program define datetime 
 end
 
-capture mkdir "Results and Figures"
-capture mkdir "Results and Figures/$S_DATE/" //make new folder for figure output if needed
-capture mkdir "Results and Figures/$S_DATE/Logs/" //new folder for stata logs
+capture confirm file "`data_dir'/Working NRH SCI.csv"
+if _rc {
+    di as err "Could not find `data_dir'/Working NRH SCI.csv."
+    di as err "Place the restricted source CSV in the ignored Data/ directory or pass a data directory as the first argument."
+    exit 601
+}
+
+local results_dir "`output_root'/$S_DATE"
+local log_dir "`results_dir'/Logs"
+
+capture mkdir "`output_root'"
+capture mkdir "`results_dir'" //make new folder for figure output if needed
+capture mkdir "`log_dir'" //new folder for stata logs
 
 
-import delimited using "Data/Working NRH SCI.csv", colrange(1:36) //, sheet("All") firstrow //case(lower) 
-save nrh-sci-raw, replace // 1x command to process the dataset to a stata file
+import delimited using "`data_dir'/Working NRH SCI.csv", colrange(1:36) //, sheet("All") firstrow //case(lower)
+save "`data_dir'/nrh-sci-raw", replace // 1x command to process the dataset to a stata file
 
 * Data processing
 clear
-capture log close
-log using "Results and Figures/$S_DATE/Logs/temp.log", append
-use nrh-sci-raw
+log using "`log_dir'/preprocessing.log", replace text
+use "`data_dir'/nrh-sci-raw", clear
 
 drop pat_mrn_id
 drop if missing(age)
@@ -57,7 +72,7 @@ encode injurylevelreportedpriortorehab, gen(init_injury_level) label(level_cat)
 drop injurylevelreportedpriortorehab
 label variable init_injury_level "Reported (Prior to Rehab) Injury Level"
 
-//TODO: coding of reason for intubation
+// Historical coding note: reason for intubation was not used in the final paper models.
 //Cat: GCS low / mental status
 //Cat: Respiratory failure (with subclassification for why, if stated)
 //Cat: Unknown / on scene
@@ -268,4 +283,4 @@ label variable time_to_censor_death "Days of follow-up (or until death)"
 gen time_to_censor_death_dc = date_death - date_discharge if death == 1
 replace time_to_censor_death_dc = date("09/30/2023", "MDY") - date_discharge if death == 0
 
-save nrh-sci-cleaned, replace
+save "`data_dir'/nrh-sci-cleaned", replace
