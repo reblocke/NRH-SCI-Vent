@@ -11,7 +11,7 @@ behavioral comparison baseline. NRH-000's human gate is complete.
 | Public signoff field | Value |
 |---|---|
 | Approved at | 2026-07-24 |
-| Approver role | Scientific owner |
+| Approver role | scientific owner |
 | Secure artifact ID | `NRH000-b3941de5-7816-495e-961d-6665031606d5` |
 
 No scientific count, estimate, source path, log excerpt, or generated
