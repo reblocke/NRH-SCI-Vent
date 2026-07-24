@@ -26,3 +26,8 @@ Results and Figures/
 *.xlsx
 *.csv
 !data_dictionary.csv
+!validation/expected_results_schema.csv
+!validation/sample_flow_schema.csv
+
+# Private authorized-baseline values and evidence
+validation/private/
