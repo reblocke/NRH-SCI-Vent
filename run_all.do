@@ -56,6 +56,9 @@ else {
     }
 
     local nrh_data_dir_normalized = lower(subinstr(strtrim("`data_dir'"), "\", "/", .))
+    while strpos("`nrh_data_dir_normalized'", "//") {
+        local nrh_data_dir_normalized = subinstr("`nrh_data_dir_normalized'", "//", "/", .)
+    }
     while substr("`nrh_data_dir_normalized'", 1, 2) == "./" {
         local nrh_data_dir_normalized = substr("`nrh_data_dir_normalized'", 3, .)
     }
