@@ -56,7 +56,22 @@ else {
     }
 
     local nrh_data_dir_normalized = lower(subinstr(strtrim("`data_dir'"), "\", "/", .))
+    while substr("`nrh_data_dir_normalized'", 1, 2) == "./" {
+        local nrh_data_dir_normalized = substr("`nrh_data_dir_normalized'", 3, .)
+    }
+    while strpos("`nrh_data_dir_normalized'", "/./") {
+        local nrh_data_dir_normalized = subinstr("`nrh_data_dir_normalized'", "/./", "/", .)
+    }
+    while regexm("`nrh_data_dir_normalized'", "/[.]$") {
+        local nrh_data_dir_normalized = substr("`nrh_data_dir_normalized'", 1, ///
+            strlen("`nrh_data_dir_normalized'") - 2)
+    }
     local nrh_data_dir_normalized = regexr("`nrh_data_dir_normalized'", "/+$", "")
+    if regexm("`nrh_data_dir_normalized'", "(^|/)[.][.]($|/)") {
+        di as err "The `profile' profile data directory may not contain parent-directory segments."
+        di as err "Pass an explicit normalized approved restricted-data directory."
+        exit 198
+    }
     if inlist("`nrh_data_dir_normalized'", "data/synthetic", "./data/synthetic") | ///
         regexm("`nrh_data_dir_normalized'", "/data/synthetic$") {
         di as err "The `profile' profile cannot use the public synthetic data directory."
