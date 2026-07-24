@@ -17,7 +17,7 @@ baseline:
   authoritative_ref: origin/main
   authoritative_commit: 6ba1caf49ac9e260723d850b2a9f189f83255258
   audited_date: "2026-07-21"
-  status: pending_authorized_run
+  status: pending_owner_approval
   allowed_status_transitions:
     - pending_authorized_run -> pending_owner_approval
     - pending_owner_approval -> approved

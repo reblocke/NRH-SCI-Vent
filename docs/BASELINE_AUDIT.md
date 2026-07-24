@@ -2,11 +2,12 @@
 
 ## Status
 
-**Baseline status:** `pending_authorized_run`
+**Baseline status:** `pending_owner_approval`
 
-The public contracts are present, but no approved scientific baseline is
-claimed. The NRH-000 pull request must remain draft until the human gate in
-`validation/README.md` is complete.
+An authorized secure run has populated and validated the private contracts,
+but no approved scientific baseline is claimed. The scientific owner's review
+is still pending, so the NRH-000 pull request must remain draft and the ticket
+remains incomplete.
 
 | Public signoff field | Value |
 |---|---|
@@ -81,8 +82,9 @@ inside NRH-000 because doing so would invalidate the pre-refactor baseline.
 
 ## Completion gate
 
-NRH-000 becomes complete only after an authorized analyst runs the unchanged
-audited code in the approved environment, populates and validates the private
-contracts, and the scientific owner approves the secure bundle. Approval is
-represented publicly only by the status, approval date, approver role, and an
-opaque secure-artifact ID in `PROJECT.yml` and this document.
+The authorized analyst has run the unchanged audited code in the approved
+environment and populated and validated the private contracts. NRH-000 becomes
+complete only after the scientific owner reviews and approves that secure
+bundle. Approval is represented publicly only by the status, approval date,
+approver role, and an opaque secure-artifact ID in `PROJECT.yml` and this
+document.
