@@ -13,13 +13,39 @@ This repository contains Stata code to reproduce the analyses and figures for ve
 - Use `llms.txt` for the shortest machine-readable project summary.
 - Use `CITATION.cff` for citation metadata.
 - Use `data_dictionary.md` or `data_dictionary.csv` for expected private inputs, key variables, derived outcomes, and generated output artifacts.
+- Use `PROJECT.yml` and `validation/` for the authorized-baseline metadata and public value-free contracts.
+- `run_all.do` is the canonical orchestration entry point.
 - The main scripts are:
   - `NRH SCI Cohort Preprocessing.do`
   - `NRH SCI Cohort Paper Analysis.do`
   - `NRH SCI Cohort Supplemental Sensitivity Analyses.do`
 
 ## Reproduction workflow
-Run from the repository root with Stata 18 after the restricted cleaned dataset is available:
+Run the canonical public smoke command from the repository root:
+
+```bash
+scripts/run_smoke.sh
+# Windows PowerShell:
+.\scripts\run_smoke.ps1
+```
+
+The launchers call `run_all.do smoke` and translate Stata's return code into the process status. Smoke accepts only `data/synthetic/Working NRH SCI.csv`. NRH-005 will add the approved fixture, so the command currently must fail clearly without falling back to restricted data. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` for a platform-specific batch flag.
+
+The canonical argument order is `profile`, `data_dir`, `output_root`, and optional `run_id`. Use only generated or opaque non-sensitive run IDs. `full` and `release` require an explicit approved restricted-data directory containing `Working NRH SCI.csv`; neither may use or fall back to the synthetic fixture. `release` also refuses to overwrite existing generated `.dta` files:
+
+```bash
+stata-mp -b do run_all.do full "/approved/data" "/approved/output"
+stata-mp -b do run_all.do release "/approved/data" "/approved/output" "path-safe-run-id"
+```
+
+On macOS, if Stata is not on `PATH`, configure the launcher:
+
+```bash
+STATA_BIN="/Applications/Stata/StataBE.app/Contents/MacOS/StataBE" \
+STATA_BATCH_FLAG=-e scripts/run_smoke.sh
+```
+
+Direct execution remains available for legacy compatibility:
 
 ```bash
 stata-mp -b do "NRH SCI Cohort Preprocessing.do"
@@ -27,16 +53,8 @@ stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
 stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
 ```
 
-The default private data directory is `Data/`. The expected source input is `Data/Working NRH SCI.csv`; preprocessing writes `Data/nrh-sci-raw.dta` and `Data/nrh-sci-cleaned.dta`. Optional script arguments are `data_dir` and `output_root`.
-
-On macOS, if `stata-mp` is not on `PATH`, use the installed Stata app binary, for example:
-
-```bash
-/Applications/Stata/StataBE.app/Contents/MacOS/StataBE -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
-```
-
 ## Expected outputs
-Generated tables, figures, and logs are written under `Results and Figures/<date>/`. These are outputs, not source files, and should not be committed unless a future release explicitly calls for public derived artifacts.
+Canonical runs write generated artifacts to one unique `Results and Figures/<run_id>/` directory. `run_all.log` and `run_manifest.csv` are value-free orchestration evidence; detailed child logs are under `Logs/`. Direct two-argument legacy calls retain `Results and Figures/<date>/`. These are outputs, not source files, and should not be committed unless a future release explicitly calls for public derived artifacts.
 
 ## Documentation surfaces to keep synchronized
 - `README.md`: human-readable overview and run instructions.
@@ -49,4 +67,7 @@ Generated tables, figures, and logs are written under `Results and Figures/<date
 - Validate `CITATION.cff` as YAML after citation edits.
 - Search for hard-coded local absolute paths before publishing.
 - Confirm `Data/`, `.dta`, Stata logs, `.gph`, and generated output folders remain ignored.
+- Exercise invalid profiles, missing restricted inputs, wrong working directories, unsafe and duplicate run IDs, and unwritable output roots without using restricted data.
+- Confirm `full` and `release` reject the public synthetic path and that failed runs never substitute another input.
+- Confirm every failed run admitted past directory and writability setup has a value-free top-level log and manifest with a nonzero overall status.
 - If Stata verification is run, inspect and then remove transient root-level `.log` files before committing.

@@ -5,12 +5,9 @@ clear
 set more off
 capture log close
 
-args data_dir output_root
+args data_dir output_root run_id
 if "`data_dir'" == "" local data_dir "Data"
 if "`output_root'" == "" local output_root "Results and Figures"
-
-program define datetime 
-end
 
 capture confirm file "`data_dir'/Working NRH SCI.csv"
 if _rc {
@@ -19,7 +16,8 @@ if _rc {
     exit 601
 }
 
-local results_dir "`output_root'/$S_DATE"
+if "`run_id'" == "" local results_dir "`output_root'/$S_DATE"
+else local results_dir "`output_root'/`run_id'"
 local log_dir "`results_dir'/Logs"
 
 capture mkdir "`output_root'"
@@ -284,3 +282,4 @@ gen time_to_censor_death_dc = date_death - date_discharge if death == 1
 replace time_to_censor_death_dc = date("09/30/2023", "MDY") - date_discharge if death == 0
 
 save "`data_dir'/nrh-sci-cleaned", replace
+log close

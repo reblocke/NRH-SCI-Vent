@@ -25,7 +25,7 @@ Please cite the final **Respiratory Care** article for the primary paper and cit
 ## Authors and affiliations
 Article authors: Casey Fenger; Brian W. Locke ([ORCID](https://orcid.org/0000-0002-3588-5238)); James Barker; William Tang; Polly Creveling; Stormy Foster-Palmer; Alexandra Flis; Kevin Park; Jeffrey Rosenbluth; Jeanette P. Brown ([ORCID](https://orcid.org/0009-0009-8407-4034)). Primary affiliations include the University of Utah Craig H. Neilsen Rehabilitation Hospital, University of Utah Department of Physical Medicine and Rehabilitation, Spencer Fox Eccles School of Medicine, University of Utah Division of Pulmonary and Critical Care Medicine, and Intermountain Medical Center.
 
-## Quick start (reproduce the main results)
+## Quick start
 
 > **Requirements**: Stata 18 with graph export support for PNG/TIFF; ability to read/write to your working directory.
 
@@ -35,22 +35,44 @@ git clone https://github.com/reblocke/NRH-SCI-Vent
 cd NRH-SCI-Vent
 ```
 
-2) **Prepare data** (restricted). The analysis uses retrospective EHR data containing PHI/PII and cannot be distributed publicly. Access was under University of Utah IRB #00153003. If you have appropriate approvals, place the restricted source CSV at `Data/Working NRH SCI.csv`. The `Data/` directory is ignored by git. The preprocessing script writes private generated Stata datasets to `Data/nrh-sci-raw.dta` and `Data/nrh-sci-cleaned.dta`.
+2) **Choose a profile.** `run_all.do` is the canonical entry point and accepts, in order, `profile`, `data_dir`, `output_root`, and an optional `run_id`.
 
-> If you do **not** have access to the restricted data, you can still review all code and outputs. We recommend creating or substituting a synthetic/de‑identified dataset with the same variable names and types to execute the pipeline end‑to‑end for demonstration purposes.
+- `smoke` is the default and is restricted to the approved public fixture path, `data/synthetic/Working NRH SCI.csv`. NRH-005 will add that fixture; until then, the canonical smoke command intentionally exits nonzero with a clear missing-fixture message.
+- `full` requires an explicit approved restricted-data directory containing `Working NRH SCI.csv` and never falls back to synthetic data.
+- `release` has the same restricted-input and filename requirement and also refuses to overwrite existing generated `.dta` files.
 
-3) **Run the pipeline** from Stata (GUI or batch). In batch on macOS/Linux/Windows:
+Run the public smoke profile from the repository root:
+
+```sh
+stata-mp -b do run_all.do smoke
+# macOS/Linux launcher
+scripts/run_smoke.sh
+# Windows PowerShell launcher
+.\scripts\run_smoke.ps1
+```
+
+For an authorized restricted run, pass the input and output locations explicitly:
+
+```sh
+stata-mp -b do run_all.do full "/approved/data" "/approved/output"
+stata-mp -b do run_all.do release "/approved/data" "/approved/output" "2026-07-24T120000_release"
+```
+
+The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if preflight or any analysis stage fails. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
+
+The POSIX launcher defaults to `-e` on macOS and `-b` on other Unix-like systems; the PowerShell launcher defaults to `/e` for Windows Stata. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` to override the platform default. For example, with the macOS app binary:
+
+```sh
+STATA_BIN="/Applications/Stata/StataBE.app/Contents/MacOS/StataBE" \
+STATA_BATCH_FLAG=-e scripts/run_smoke.sh
+```
+
+The legacy scripts remain directly executable for compatibility. Their first two optional arguments are `data_dir` and `output_root`; without an orchestration `run_id`, they retain the historical `Results and Figures/<date>/` layout:
+
 ```sh
 stata-mp -b do "NRH SCI Cohort Preprocessing.do"
 stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
 stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
-# or use 'stata-se' / 'stata' depending on your license
-```
-On completion, figures and tables will be written under `Results and Figures/<date>/`.
-
-Optional script arguments are `data_dir` and `output_root`. For example:
-```sh
-stata-mp -b do "NRH SCI Cohort Paper Analysis.do" Data "Results and Figures"
 ```
 
 ### Expected outputs
@@ -59,8 +81,9 @@ The analysis script exports (filenames may be updated as wording evolves):
 - `Fig 3 - Ordinal Regressions.tiff` — ORs for ventilator independence and discharge.
 - `Supp Figure - CIFs for milestones.tiff` — cumulative incidence for day‑wean, liberation from IMV, decannulation.
 - `Figure 4 - KMs for death.tiff` — KM curves by discharge location and weaning milestone.
-- Supplemental tables in `xlsx` under `Results and Figures/<date>/`.
-- Logs under `Results and Figures/<date>/Logs/`.
+- Supplemental tables in `xlsx` under `Results and Figures/<run_id>/`.
+- Orchestration evidence at `Results and Figures/<run_id>/run_all.log` and `run_manifest.csv`.
+- Detailed script logs under `Results and Figures/<run_id>/Logs/`.
 
 (Figure 1 was generated separately)
 
@@ -72,7 +95,7 @@ Run it from Stata 18 after the cleaned analysis dataset is available:
 stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
 ```
 
-Expected response outputs are written under `Results and Figures/<date>/`:
+When run directly, expected response outputs are written under `Results and Figures/<date>/`; orchestration writes them under `<output_root>/<run_id>/`:
 - `Supplemental Figure - Median Days to Milestones by Exact Injury Level.tiff`
 - `Supplemental Figure - Milestone Rates by Finer Injury Groups.tiff`
 - `Supplemental Figure - Observed Discharge Disposition by Age, Split by Decannulation.tiff`
@@ -92,8 +115,13 @@ The response analyses require the same restricted dataset as the paper analyses.
 ```
 ├── README.md                             # Human-readable project overview and run instructions
 ├── llms.txt                              # Machine-readable repository summary for LLM indexing
+├── PROJECT.yml                           # Development, release, and authorized-baseline metadata
 ├── CITATION.cff                          # Software and preferred article citation metadata
 ├── AGENTS.md                             # Repository-specific guidance for coding agents
+├── run_all.do                            # Canonical smoke/full/release orchestration entry point
+├── config/                               # Profile defaults and overrides
+├── scripts/                              # Cross-platform smoke launchers
+├── validation/                           # Public value-free validation contracts
 ├── data_dictionary.md / data_dictionary.csv
 │                                          # Public variable, file, and output documentation
 ├── NRH SCI Cohort Preprocessing.do      # Prepares analysis dataset(s) and helper variables
@@ -101,14 +129,15 @@ The response analyses require the same restricted dataset as the paper analyses.
 ├── NRH SCI Cohort Supplemental Sensitivity Analyses.do
 │                                          # Produces author-response supplemental outputs
 ├── Data/                                # Ignored private inputs and generated .dta files
-├── Results and Figures/                 # Ignored generated outputs by date
+├── Results and Figures/                 # Ignored generated outputs by run ID or legacy date
 └── LICENSE                              # Code license (MIT)
 ```
 
 ## Workflow
-1. `NRH SCI Cohort Preprocessing.do` — reads `Data/Working NRH SCI.csv`, constructs analysis variables, and writes `Data/nrh-sci-raw.dta` and `Data/nrh-sci-cleaned.dta`.
-2. `NRH SCI Cohort Paper Analysis.do` — reads `Data/nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
-3. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — reads `Data/nrh-sci-cleaned.dta`, generates the supplemental figures, correspondence table, and model log used to support the published author response.
+1. `run_all.do` — validates the profile, paths, unique run ID, and required input; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
+2. `NRH SCI Cohort Preprocessing.do` — reads `Working NRH SCI.csv` from the configured data directory, constructs analysis variables, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
+3. `NRH SCI Cohort Paper Analysis.do` — reads `nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
+4. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — reads `nrh-sci-cleaned.dta`, generates the supplemental figures, correspondence table, and model log used to support the published author response.
 
 ## Machine-readable metadata
 - [`llms.txt`](./llms.txt) summarizes the repository purpose, article identifiers, run order, data restrictions, and agent cautions.
@@ -138,6 +167,7 @@ Release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
 
 ## Environment
 - Tested with **Stata 18**. The workflow uses built-in Stata survival, regression, and graphics commands, plus existing user-written commands used by the legacy analysis workflow, including `table1_mc`, `coefplot`, and `stackedcount`.
+- The launchers and orchestration paths are cross-platform. The current supplemental TIFF fallback still uses macOS command-line tools (`sips`, `grep`, and `touch`), so full end-to-end portability is not yet claimed.
 - Hardware: standard laptop/desktop is sufficient (no GPU required). Runs complete in minutes on a typical workstation.
 
 ## Funding & acknowledgements
