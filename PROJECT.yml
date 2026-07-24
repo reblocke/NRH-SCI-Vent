@@ -17,15 +17,15 @@ baseline:
   authoritative_ref: origin/main
   authoritative_commit: 6ba1caf49ac9e260723d850b2a9f189f83255258
   audited_date: "2026-07-21"
-  status: pending_owner_approval
+  status: approved
   allowed_status_transitions:
     - pending_authorized_run -> pending_owner_approval
     - pending_owner_approval -> approved
   public_baseline_values: false
   approval:
-    approved_at: null
-    approver_role: null
-    secure_artifact_id: null
+    approved_at: "2026-07-24"
+    approver_role: "scientific owner"
+    secure_artifact_id: NRH000-b3941de5-7816-495e-961d-6665031606d5
   contracts:
     expected_results:
       version: 1

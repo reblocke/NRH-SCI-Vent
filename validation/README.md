@@ -1,10 +1,9 @@
 # Authorized baseline validation
 
-This directory contains the public, value-free contracts for NRH-000. It does
-not contain an approved scientific baseline. The baseline remains
-unapproved while it moves from `pending_authorized_run` to
-`pending_owner_approval`; only the scientific owner's review can set it to
-`approved`.
+This directory contains the public, value-free contracts for NRH-000. The
+private baseline has been populated, validated, and approved by the scientific
+owner. Public contracts remain value-free and expose only the approved status,
+approval date, approver role, and opaque secure-artifact ID.
 
 ## Public and private artifacts
 
