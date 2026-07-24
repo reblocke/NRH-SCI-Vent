@@ -25,17 +25,17 @@ Thanks for your interest in improving this research code! We welcome contributio
    cd NRH-SCI-Vent
    git checkout -b feature/<short-name>
    ```
-3. Run the scripts in **batch** to ensure they complete without interaction:
+3. Run the canonical public smoke command:
    ```sh
-   stata-mp -b do "NRH SCI Cohort Preprocessing.do"
-   stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
+   scripts/run_smoke.sh
    ```
+   NRH-005 has not yet supplied the approved public fixture, so the expected NRH-001 result is a clear nonzero missing-fixture status, not an end-to-end smoke pass. Never substitute an ad hoc synthetic or restricted dataset for this check.
 
 ## Style and structure
 
 - Keep Stata code **modular**, with clear section headers and comments for each figure/table.
 - Use **descriptive variable names** and document categorical encodings (e.g., `high_vs_low`, `comp_vs_part`).
-- Export graphics to **TIFF** (for journals) and **PNG** where helpful for web previews, using the existing folder convention: `Results and Figures/<date>/`.
+- Export graphics to **TIFF** (for journals) and **PNG** where helpful for web previews, using the canonical folder convention: `Results and Figures/<run_id>/`. Direct legacy calls retain the historical `<date>` directory.
 
 ## Submitting a pull request
 

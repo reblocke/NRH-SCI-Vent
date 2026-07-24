@@ -8,7 +8,7 @@ clear all
 set more off
 capture log close
 
-args data_dir output_root
+args data_dir output_root run_id
 if "`data_dir'" == "" local data_dir "Data"
 if "`output_root'" == "" local output_root "Results and Figures"
 
@@ -19,7 +19,8 @@ if _rc {
     exit 601
 }
 
-local results_dir "`output_root'/$S_DATE"
+if "`run_id'" == "" local results_dir "`output_root'/$S_DATE"
+else local results_dir "`output_root'/`run_id'"
 local log_dir "`results_dir'/Logs"
 
 capture mkdir "`output_root'"

@@ -13,7 +13,7 @@ The study data are restricted retrospective EHR data governed by University of U
 | `Data/Working NRH SCI.csv` | Restricted source CSV for preprocessing | No | Expected input to `NRH SCI Cohort Preprocessing.do`; first 36 columns are imported. |
 | `Data/nrh-sci-raw.dta` | Generated raw Stata intermediate | No | Created from the source CSV by preprocessing. |
 | `Data/nrh-sci-cleaned.dta` | Generated cleaned analysis dataset | No | Consumed by the paper and supplemental analysis scripts. |
-| `Results and Figures/<date>/` | Generated tables, figures, and logs | No | Created by analysis scripts; treated as generated output. |
+| `Results and Figures/<run_id>/` | Canonical generated tables, figures, logs, and run evidence | No | Created by `run_all.do`; direct legacy calls retain `Results and Figures/<date>/`. |
 
 ## Key Variables
 
