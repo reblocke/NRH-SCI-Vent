@@ -1,0 +1,75 @@
+schema_version: 1
+
+project:
+  id: NRH-SCI-Vent
+  title: NRH-SCI-Vent
+  repository: https://github.com/reblocke/NRH-SCI-Vent
+  target_classification: T2 claim-bearing publication analysis with high-risk clinical-data overlay
+  development_version: 0.3.0-dev
+  maintenance_status: active-development
+
+latest_release:
+  version: v0.2.0
+  commit: 45a50136bf6b0279b2a1cf34a51c559109596c0a
+  citation_metadata: CITATION.cff
+
+baseline:
+  authoritative_ref: origin/main
+  authoritative_commit: 6ba1caf49ac9e260723d850b2a9f189f83255258
+  audited_date: "2026-07-21"
+  status: approved
+  allowed_status_transitions:
+    - pending_authorized_run -> pending_owner_approval
+    - pending_owner_approval -> approved
+  public_baseline_values: false
+  approval:
+    approved_at: "2026-07-24"
+    approver_role: "scientific owner"
+    secure_artifact_id: NRH000-b3941de5-7816-495e-961d-6665031606d5
+  contracts:
+    expected_results:
+      version: 1
+      path: validation/expected_results_schema.csv
+    sample_flow:
+      version: 1
+      path: validation/sample_flow_schema.csv
+  public_audit: docs/BASELINE_AUDIT.md
+
+analysis_files:
+  - path: NRH SCI Cohort Preprocessing.do
+    sha256: d220ae6ab659760d7def73010ee985a14e6e2a65ad00c9c9ab309d81a0001a42
+  - path: NRH SCI Cohort Paper Analysis.do
+    sha256: 7e57f1bf30b8029a67d5a24bf601df4ffab7e0a839298c28d64b53179280e866
+  - path: NRH SCI Cohort Supplemental Sensitivity Analyses.do
+    sha256: 73e6b20e0f4e337286ea0b5787644c7e1c40b9452b8a5d5778201fe6a70b4480
+
+comparison_policy:
+  exact:
+    applies_to:
+      - integer counts
+      - category codes and labels
+      - status values
+      - stable SHA-256 hashes
+    absolute_tolerance: 0
+    relative_tolerance: 0
+  numeric_tolerance:
+    rule: abs(actual - expected) <= max(absolute_tolerance, relative_tolerance * abs(expected))
+    default_absolute_tolerance: 1.0e-8
+    default_relative_tolerance: 1.0e-6
+  precision_limited:
+    rule: absolute_tolerance must equal half the final recorded unit
+    requires_recorded_precision: true
+  informational:
+    rule: record for provenance but do not use as a pass-fail release gate
+    required: false
+
+privacy:
+  source_classification: restricted clinical data
+  public_values_permitted: false
+  private_bundle_location: institutionally approved storage outside the Git repository
+  prohibited_public_artifacts:
+    - patient-level data
+    - aggregate expected values without disclosure approval
+    - real-data logs
+    - generated real-data tables or figures
+    - source paths that expose user or institutional details
