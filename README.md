@@ -60,7 +60,7 @@ stata-mp -b do run_all.do full "/approved/data" "/approved/output"
 stata-mp -b do run_all.do release "/approved/data" "/approved/output" "2026-07-24T120000_release"
 ```
 
-The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if dependency preflight, input preflight, or any analysis stage fails. Dependency preflight runs before the source-file check. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
+The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if dependency preflight, input preflight, strict source-contract validation, or any analysis stage fails. Dependency preflight runs before the source-file check, and the source contract runs before preprocessing. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; the private source-contract log contains rule IDs and exact aggregate invalid counts but no values, identifiers, row numbers, or source paths. Detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
 
 The POSIX launcher defaults to `-e` on macOS and `-b` on other Unix-like systems; the PowerShell launcher defaults to `/e` for Windows Stata. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` to override the platform default. For example, with the macOS app binary:
 
@@ -140,7 +140,7 @@ The response analyses require the same restricted dataset as the paper analyses.
 - **Population**: Adults with CSCI admitted 2015–2022 to rehabilitation on continuous IMV via tracheostomy.
 - **IRB**: University of Utah IRB **#00153003**; retrospective, exempt category.
 - **Human‑subject protections**: Source EHR data contain PHI/PII and are **not** shared in this repository. Researchers wishing to reproduce results must obtain appropriate IRB approval and data use permissions at their institution.
-- **Data dictionary**: Public documentation of expected inputs, derived variables, and output artifacts is available in [`data_dictionary.md`](./data_dictionary.md) and [`data_dictionary.csv`](./data_dictionary.csv). These files do not contain row-level data.
+- **Data dictionary**: Public documentation of expected inputs, derived variables, and output artifacts is available in [`data_dictionary.md`](./data_dictionary.md) and [`data_dictionary.csv`](./data_dictionary.csv). The exact ordered 36-field source contract is in [`validation/source_schema.csv`](./validation/source_schema.csv), with additional checks in [`validation/validation_rules.csv`](./validation/validation_rules.csv). These files do not contain row-level data.
 
 ## Repository layout
 ```
@@ -151,10 +151,12 @@ The response analyses require the same restricted dataset as the paper analyses.
 ├── AGENTS.md                             # Repository-specific guidance for coding agents
 ├── run_all.do                            # Canonical smoke/full/release orchestration entry point
 ├── code/00_preflight.do                  # Offline dependency resolution and SHA-256 gate
+├── code/lib/data_contracts.do            # Strict source-schema and domain validator
 ├── config/                               # Profile defaults and overrides
 ├── scripts/                              # Cross-platform smoke launchers
 ├── vendor/stata/                         # Locked runtime ado files, manifest, and licenses
-├── validation/                           # Public value-free validation contracts
+├── validation/                           # Public value-free baseline and source contracts
+├── tests/test_source_contract.do         # Synthetic-only source-contract failure tests
 ├── data_dictionary.md / data_dictionary.csv
 │                                          # Public variable, file, and output documentation
 ├── NRH SCI Cohort Preprocessing.do      # Prepares analysis dataset(s) and helper variables
@@ -167,9 +169,9 @@ The response analyses require the same restricted dataset as the paper analyses.
 ```
 
 ## Workflow
-1. `run_all.do` — validates the profile, paths, and unique run ID; runs dependency preflight before input preflight; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
+1. `run_all.do` — validates the profile, paths, and unique run ID; runs dependency preflight before input preflight; enforces the strict ordered source contract; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
 2. `code/00_preflight.do` — prepends the locked ado tree, verifies every manifest SHA-256, and confirms controlled command and scheme resolution without network access.
-3. `NRH SCI Cohort Preprocessing.do` — reads `Working NRH SCI.csv` from the configured data directory, constructs analysis variables, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
+3. `NRH SCI Cohort Preprocessing.do` — independently re-enforces the strict source contract for standalone safety, reads the complete `Working NRH SCI.csv` without positional truncation, constructs analysis variables, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
 4. `NRH SCI Cohort Paper Analysis.do` — reads `nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
 5. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — reads `nrh-sci-cleaned.dta`, generates the supplemental figures, correspondence table, and model log used to support the published author response.
 

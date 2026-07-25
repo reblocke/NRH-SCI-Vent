@@ -1,0 +1,14 @@
+rule_id,source_field,rule_type,parameters,strict_action,development_action,disclosure_output,notes
+source_pat_mrn_id_unique_nonmissing,pat_mrn_id,unique_nonmissing,,fail,warn,aggregate_count_only,Counts missing and duplicate rows without emitting identifiers or row numbers.
+source_dateofinjury_parseable,dateofinjury,parseable_date,mask=MD20Y,fail,warn,aggregate_count_only,Blank cells are governed by source_schema.csv.
+source_tod_parseable,tod,parseable_date,mask=MD20Y,fail,warn,aggregate_count_only,Blank cells are governed by source_schema.csv.
+source_age_nonnegative,age,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daysfrominjurytointubation_nonnegative,daysfrominjurytointubation,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daysfromintubationtotrach_nonnegative,daysfromintubationtotrach,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daysfrominjurytoadmissiontorehab_nonnegative,daysfrominjurytoadmissiontorehab,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daysfromadmissiontorehabtodecanu_nonnegative,daysfromadmissiontorehabtodecanu,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daystodischargefromrehab_nonnegative,daystodischargefromrehab,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_daysfromdischargetodeath_nonnegative,daysfromdischargetodeath,nonnegative,,fail,warn,aggregate_count_only,Applied only to nonmissing values.
+source_column1_all_missing,column1,all_missing,,fail,warn,aggregate_count_only,The placeholder column must contain no values.
+source_daytime_wean_numeric_or_literal,ifyestopreviousquestionhowmanyda,numeric_or_allowed_literal,nonnegative=true,fail,warn,aggregate_count_only,Allowed exception literals are declared in source_schema.csv.
+source_full_wean_numeric_or_literal,v23,numeric_or_allowed_literal,nonnegative=true,fail,warn,aggregate_count_only,Allowed exception literals are declared in source_schema.csv.

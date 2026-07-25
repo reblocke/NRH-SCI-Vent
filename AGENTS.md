@@ -13,7 +13,7 @@ This repository contains Stata code to reproduce the analyses and figures for ve
 - Use `llms.txt` for the shortest machine-readable project summary.
 - Use `CITATION.cff` for citation metadata.
 - Use `data_dictionary.md` or `data_dictionary.csv` for expected private inputs, key variables, derived outcomes, and generated output artifacts.
-- Use `PROJECT.yml` and `validation/` for the authorized-baseline metadata and public value-free contracts.
+- Use `PROJECT.yml` and `validation/` for the authorized-baseline metadata and public value-free baseline and source contracts.
 - Use `vendor/stata/manifest.csv` and `vendor/stata/LICENSES.md` for exact
   community-package files, hashes, sources, and third-party licenses.
 - `code/00_preflight.do` is the required offline dependency gate.
@@ -32,7 +32,7 @@ scripts/run_smoke.sh
 .\scripts\run_smoke.ps1
 ```
 
-The launchers call `run_all.do smoke` and translate Stata's return code into the process status. Dependency preflight must pass from `vendor/stata/plus/` before the runner checks for data. Smoke accepts only `data/synthetic/Working NRH SCI.csv`. NRH-005 will add the approved fixture, so the command currently must pass dependency preflight and then fail clearly for the missing fixture without falling back to restricted data. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` for a platform-specific batch flag.
+The launchers call `run_all.do smoke` and translate Stata's return code into the process status. Dependency preflight must pass from `vendor/stata/plus/` before the runner checks for data. When an input is present, `validation/source_schema.csv` and `validation/validation_rules.csv` are enforced in strict mode before preprocessing; canonical profiles never use development warning mode. Smoke accepts only `data/synthetic/Working NRH SCI.csv`. NRH-005 will add the approved fixture, so the command currently must pass dependency preflight and then fail clearly for the missing fixture without falling back to restricted data. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` for a platform-specific batch flag.
 
 The canonical argument order is `profile`, `data_dir`, `output_root`, and optional `run_id`. Use only generated or opaque non-sensitive run IDs. `full` and `release` require an explicit approved restricted-data directory containing `Working NRH SCI.csv`; neither may use or fall back to the synthetic fixture. `release` also refuses to overwrite existing generated `.dta` files:
 
@@ -75,6 +75,8 @@ Canonical runs write generated artifacts to one unique `Results and Figures/<run
 - Exercise invalid profiles, missing restricted inputs, wrong working directories, unsafe and duplicate run IDs, and unwritable output roots without using restricted data.
 - Confirm `full` and `release` reject the public synthetic path and that failed runs never substitute another input.
 - Confirm every failed run admitted past directory and writability setup has a value-free top-level log and manifest with a nonzero overall status.
+- Run `tests/test_source_contract.do` and confirm reordered, missing, extra, mistyped, required-missing, duplicate-ID, invalid-date, negative, and unexpected-category fixtures fail as specified; development mode may warn only for content drift and must never bypass structural failures.
+- Confirm source-contract logs contain only rule IDs, sanitized field names, status, and aggregate invalid counts, with no values, identifiers, row numbers, or source paths.
 - Confirm dependency preflight runs before the source-file check, resolves only
   from `vendor/stata/plus/`, and detects missing or modified files.
 - Recompute every `vendor/stata/manifest.csv` SHA-256 independently and reject

@@ -81,3 +81,28 @@ dependencies:
     vendor_path: vendor/stata/plus
     preflight_path: code/00_preflight.do
     runtime_network_installation: false
+
+source_contract:
+  version: 1
+  status: pending_data_steward_approval
+  allowed_status_transitions:
+    - pending_data_steward_approval -> approved
+  public_category_domains: sanitized normalized literals
+  normalization: Unicode NFC, trim surrounding whitespace, uppercase
+  strict_profiles:
+    - smoke
+    - full
+    - release
+  development_warning_mode:
+    canonical_profiles_permitted: false
+    direct_validator_use_only: true
+  contracts:
+    data_sources: validation/data_sources.csv
+    source_schema: validation/source_schema.csv
+    validation_rules: validation/validation_rules.csv
+  validator: code/lib/data_contracts.do
+  tests: tests/test_source_contract.do
+  approval:
+    approved_at: ""
+    approver_role: ""
+    secure_artifact_id: NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f

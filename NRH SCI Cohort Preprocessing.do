@@ -24,8 +24,12 @@ capture mkdir "`output_root'"
 capture mkdir "`results_dir'" //make new folder for figure output if needed
 capture mkdir "`log_dir'" //new folder for stata logs
 
-
-import delimited using "`data_dir'/Working NRH SCI.csv", colrange(1:36) //, sheet("All") firstrow //case(lower)
+do "code/lib/data_contracts.do"
+nrh_validate_source_contract using "`data_dir'/Working NRH SCI.csv", ///
+    schema("validation/source_schema.csv") ///
+    rules("validation/validation_rules.csv") ///
+    mode("strict") ///
+    log("`log_dir'/source_contract.log")
 save "`data_dir'/nrh-sci-raw", replace // 1x command to process the dataset to a stata file
 
 * Data processing
