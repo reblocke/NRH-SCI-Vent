@@ -10,7 +10,7 @@ The study data are restricted retrospective EHR data governed by University of U
 
 | File | Role | Public? | Notes |
 |---|---|---|---|
-| `Data/Working NRH SCI.csv` | Restricted source CSV for preprocessing | No | Expected input to `NRH SCI Cohort Preprocessing.do`; first 36 columns are imported. |
+| `Data/Working NRH SCI.csv` | Restricted source CSV for preprocessing | No | Expected input to `NRH SCI Cohort Preprocessing.do`; all 36 ordered columns must conform to `validation/source_schema.csv`. |
 | `Data/nrh-sci-raw.dta` | Generated raw Stata intermediate | No | Created from the source CSV by preprocessing. |
 | `Data/nrh-sci-cleaned.dta` | Generated cleaned analysis dataset | No | Consumed by the paper and supplemental analysis scripts. |
 | `Results and Figures/<run_id>/` | Canonical generated tables, figures, logs, and run evidence | No | Created by `run_all.do`; direct legacy calls retain `Results and Figures/<date>/`. |
@@ -35,6 +35,7 @@ The CSV companion file has one row per documented file, source field, derived an
 
 ## Review Flags
 
-- Exact source column labels are documented from the public Stata scripts and may need review against the restricted CSV data dictionary.
-- The legacy code imports the first 36 columns of `Working NRH SCI.csv`; if the local CSV schema changes, update both preprocessing and this dictionary together.
+- The canonical ordered source-field, storage-type, missingness, sensitivity, and sanitized literal domains are defined in `validation/source_schema.csv`; `validation/validation_rules.csv` adds the identifier, date, nonnegative, placeholder, and mixed numeric/literal rules.
+- Preprocessing imports the complete source CSV only after strict validation. Missing, extra, reordered, mistyped, or unexpected categorical fields fail rather than being silently truncated.
+- Public categorical domains freeze normalized lexical inputs only. They do not approve the unresolved clinical mappings flagged here for NRH-004.
 - Do not infer additional clinical definitions from private data without updating the public documentation.

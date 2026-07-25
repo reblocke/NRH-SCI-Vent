@@ -1,0 +1,37 @@
+source_field,required,storage_type,semantic_type,allowed_values,missing_allowed,sensitivity,used_by,notes
+pat_mrn_id,true,numeric,identifier,,false,direct_identifier,dropped_identifier,Required unique row identifier; never logged or retained in the cleaned dataset.
+age,true,numeric,integer,,true,quasi_identifier,preprocessing,Cell missingness is permitted because the unchanged workflow excludes missing age.
+sex,true,string,categorical,F | M | MALE,true,sensitive_clinical,preprocessing,Lexical source domain only; clinical interpretation remains unresolved for NRH-004.
+dateofinjury,true,string,date_mdy,,true,quasi_identifier,preprocessing,Nonblank values must parse as MD20Y dates.
+injurylevelreportedpriortorehab,true,string,categorical,C1 | C2 | C3 | C4 | C5 | C6 | C7,true,sensitive_clinical,preprocessing,Lexical source domain only; injury-level mapping remains unresolved for NRH-004.
+ribfracturesyorn,true,string,categorical,N | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+pneumothoraxyorn,true,string,categorical,N | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+chesttubeyorn,true,string,categorical,N | Y | Y. AFTER INTUBATION | Y. AFTER INTUBATION. PLEURAL EFFUSION,true,sensitive_clinical,preprocessing,Lexical source domain only; broad legacy recoding remains unresolved for NRH-004.
+daysfrominjurytointubation,true,numeric,integer,,true,sensitive_clinical,retained_unmodeled,Nonblank values must be nonnegative integers.
+reasonforintubation,true,string,free_text,,true,restricted_free_text,retained_unmodeled,No public literal domain; content remains restricted.
+daysfromintubationtotrach,true,numeric,integer,,true,sensitive_clinical,retained_unmodeled,Nonblank values must be nonnegative integers.
+attempttoweanpriortotrachyorn,true,string,categorical,N | NO | UNKNOWN | Y | Y - EXTUBATED ON 8/20  BUT PT STRIDORED AND C.A.,true,sensitive_clinical,preprocessing,Lexical source domain only; clinical harmonization remains unresolved for NRH-004.
+attempttoweanoffventpriortotrans,true,string,categorical,N | UNKNOWN | UNKOWN | Y | Y (ABLE TO WEANE TO VENT AT NIGHT),true,sensitive_clinical,preprocessing,Lexical source domain only; spelling variants are frozen behavior not endorsed terminology.
+didpatientdeveloppneumoniapriort,true,string,categorical,N | Y | YES,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+column1,true,numeric,empty_placeholder,,true,operational,dropped_placeholder,Required placeholder column; all cells must remain missing.
+osh,true,string,categorical,N | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+admitfrom,true,string,free_text,,true,sensitive_clinical,retained_unmodeled,No public literal domain; retained by unchanged preprocessing.
+daysfrominjurytoadmissiontorehab,true,numeric,integer,,true,sensitive_clinical,preprocessing,Nonblank values must be nonnegative integers.
+asiaclassificationatrehab,true,string,categorical,C2 AIS A | C2 AIS C | C3 AIS A | C3 AIS C | C3 CENTRAL CORD | C4 AIA A | C4 AIS A | C4 AIS B | C4 AIS C | C5 AIS A | C5 AIS C | C5 CENTRAL CORD | C6 AIS A | C7 AIS A,true,sensitive_clinical,preprocessing,Lexical source domain only; ASIA or AIS mapping remains unresolved for NRH-004.
+weanoffventduringthedayandcontin,true,string,categorical,N | Y | Y (PRIOR TO REHAB) | Y PRIOR TO ADMISSION | Y.,true,sensitive_clinical,preprocessing,Lexical source domain only; preprocessing behavior is unchanged.
+ifyestopreviousquestionhowmanyda,true,string,numeric_with_exceptions,0 (PRIOR TO REHAB) | 0- PT WEANED ON ARRIVAL | PRIOR TO REHAB,true,sensitive_clinical,preprocessing,Accepts nonnegative numeric text or one frozen exception literal.
+weanoffventforfull24hoursyorn,true,string,categorical,N | N - BIPAP AT NIGHT | Y,true,sensitive_clinical,preprocessing,Lexical source domain only; preprocessing behavior is unchanged.
+v23,true,string,numeric_with_exceptions,1 WEANED OFF CPAP AT NIGHT,true,sensitive_clinical,preprocessing,Accepts nonnegative numeric text or the frozen exception literal.
+didpatientdecanulateyorn,true,string,categorical,N | N. | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+daysfromadmissiontorehabtodecanu,true,numeric,integer,,true,sensitive_clinical,preprocessing,Nonblank values must be nonnegative integers.
+didtheytransfertoicufromrehabyor,true,string,categorical,N | Y | Y  - SICU,true,sensitive_clinical,preprocessing,Internal spaces are significant after trim and uppercase normalization.
+iftheytransferredtoicuwascausere,true,string,categorical,N | N (DIAPHRAM PACER PLACEMENT) | Y,true,sensitive_clinical,preprocessing,Lexical source domain only; preprocessing behavior is unchanged.
+didtheydeveloppnumoniaatrehabyor,true,string,categorical,N | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+daystodischargefromrehab,true,numeric,integer,,true,sensitive_clinical,preprocessing,Nonblank values must be nonnegative integers.
+dischargelocation,true,string,categorical,HH | HOME | HOME HEALTH | HOME W/ HOME HEALTH | LTAC | NEURORESTORITIVE THERAPY | SNF,true,sensitive_clinical,preprocessing,Lexical source domain only; discharge mapping remains frozen behavior.
+completerecord,true,string,free_text,,true,operational,retained_unmodeled,No public literal domain; retained by unchanged preprocessing.
+comments,true,string,free_text,,true,restricted_free_text,retained_unmodeled,No public literal domain; content remains restricted.
+deceased,true,string,categorical,N | Y,true,sensitive_clinical,preprocessing,Normalized by Unicode NFC trim and uppercase.
+tod,true,string,date_mdy,,true,quasi_identifier,preprocessing,Nonblank values must parse as MD20Y dates.
+daysfromdischargetodeath,true,numeric,integer,,true,sensitive_clinical,retained_unmodeled,Nonblank values must be nonnegative integers.
+causeofdeath,true,string,free_text,,true,restricted_free_text,retained_unmodeled,No public literal domain; content remains restricted.

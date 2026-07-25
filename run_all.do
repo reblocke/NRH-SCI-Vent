@@ -30,8 +30,11 @@ foreach required_file in ///
     "config/full.do" ///
     "config/release.do" ///
     "code/00_preflight.do" ///
+    "code/lib/data_contracts.do" ///
     "vendor/stata/manifest.csv" ///
-    "validation/expected_results_schema.csv" {
+    "validation/expected_results_schema.csv" ///
+    "validation/source_schema.csv" ///
+    "validation/validation_rules.csv" {
     capture confirm file "`required_file'"
     if _rc {
         di as err "Repository preflight could not find `required_file'."
@@ -139,6 +142,8 @@ local nrh_failed_stage ""
 local nrh_dependency_preflight_rc .
 local nrh_dependency_manifest_sha256 ""
 local nrh_preflight_rc .
+local nrh_source_contract_rc .
+local nrh_source_contract_version .
 local nrh_preprocessing_rc .
 local nrh_cleaned_validation_rc .
 local nrh_paper_rc .
@@ -230,7 +235,39 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 3: unchanged preprocessing body through the legacy entry point.
+* Stage 3: validate the ordered source contract before preprocessing.
+if `nrh_overall_rc' == 0 {
+    capture noisily do "code/lib/data_contracts.do"
+    local nrh_source_contract_rc = _rc
+    if `nrh_source_contract_rc' == 0 {
+        capture noisily nrh_validate_source_contract ///
+            using "`data_dir'/`nrh_source_file'", ///
+            schema("validation/source_schema.csv") ///
+            rules("validation/validation_rules.csv") ///
+            mode("strict") ///
+            log("`log_dir'/source_contract.log")
+        local nrh_source_contract_rc = _rc
+        if `nrh_source_contract_rc' == 0 {
+            local nrh_source_contract_version = r(contract_version)
+        }
+    }
+    di as txt "NRH_STAGE source_contract rc=`nrh_source_contract_rc'"
+    capture file open `nrh_toplog' using "`master_log'", write text append
+    if _rc {
+        local nrh_toplog_rc = _rc
+    }
+    else {
+        file write `nrh_toplog' ///
+            "stage.source_contract.rc=`nrh_source_contract_rc'" _n
+        file close `nrh_toplog'
+    }
+    if `nrh_source_contract_rc' {
+        local nrh_overall_rc `nrh_source_contract_rc'
+        local nrh_failed_stage "source_contract"
+    }
+}
+
+* Stage 4: unchanged preprocessing body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Preprocessing.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
@@ -251,7 +288,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 4: sentinel cleaned-file validation. NRH-003/006 add full contracts.
+* Stage 5: sentinel cleaned-file validation. NRH-006 adds the cleaned contract.
 if `nrh_overall_rc' == 0 {
     capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
     local nrh_cleaned_validation_rc = _rc
@@ -270,7 +307,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 5: unchanged paper-analysis body through the legacy entry point.
+* Stage 6: unchanged paper-analysis body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Paper Analysis.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
@@ -291,7 +328,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 6: unchanged supplemental-analysis body through the legacy entry point.
+* Stage 7: unchanged supplemental-analysis body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Supplemental Sensitivity Analyses.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
@@ -312,7 +349,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 7: check the output-presence rows in the public value-free contract.
+* Stage 8: check the output-presence rows in the public value-free contract.
 if `nrh_overall_rc' == 0 {
     local nrh_output_check_rc 0
     capture noisily import delimited using "`nrh_expected_results_contract'", ///
@@ -366,7 +403,7 @@ if `nrh_toplog_rc' & `nrh_overall_rc' == 0 {
     local nrh_failed_stage "top_log"
 }
 
-* Stage 8: always attempt a value-free runtime manifest after run creation.
+* Stage 9: always attempt a value-free runtime manifest after run creation.
 local nrh_completed "`c(current_date)' `c(current_time)'"
 tempname nrh_manifest
 capture file open `nrh_manifest' using "`manifest_file'", write text replace
@@ -389,6 +426,10 @@ if `nrh_manifest_rc' == 0 {
     file write `nrh_manifest' ///
         "dependency_preflight_rc,`nrh_dependency_preflight_rc'" _n
     file write `nrh_manifest' "preflight_rc,`nrh_preflight_rc'" _n
+    file write `nrh_manifest' ///
+        "source_contract_version,`nrh_source_contract_version'" _n
+    file write `nrh_manifest' ///
+        "source_contract_rc,`nrh_source_contract_rc'" _n
     file write `nrh_manifest' "preprocessing_rc,`nrh_preprocessing_rc'" _n
     file write `nrh_manifest' "cleaned_validation_rc,`nrh_cleaned_validation_rc'" _n
     file write `nrh_manifest' "paper_rc,`nrh_paper_rc'" _n

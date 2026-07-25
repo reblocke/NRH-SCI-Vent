@@ -1,0 +1,2 @@
+source_id,file_name,format,delimiter,encoding,line_endings,header_row,expected_columns,classification,contract_version,approval_status,approval_date,approver_role,secure_review_artifact_id,notes
+working_nrh_sci,Working NRH SCI.csv,csv,comma,UTF-8 with BOM,CRLF,1,36,restricted clinical data,1,approved,2026-07-24,data steward,NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f,Public metadata only; the source path checksum row count and values remain private.

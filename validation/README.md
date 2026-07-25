@@ -1,9 +1,11 @@
-# Authorized baseline validation
+# Public validation contracts
 
-This directory contains the public, value-free contracts for NRH-000. The
-private baseline has been populated, validated, and approved by the scientific
-owner. Public contracts remain value-free and expose only the approved status,
-approval date, approver role, and opaque secure-artifact ID.
+This directory contains the public, value-free contracts for the approved
+NRH-000 behavioral baseline and the approved NRH-003 source schema. The private
+baseline has been populated, validated, and approved by the scientific owner.
+The source contract was approved by the data steward on 2026-07-24. Public
+contracts expose only sanitized metadata, approval state, approver role,
+approval date, and opaque secure-artifact IDs.
 
 ## Public and private artifacts
 
@@ -12,8 +14,12 @@ approval date, approver role, and opaque secure-artifact ID.
 | Project and approval metadata | `PROJECT.yml` | Public | Git anchors, contract versions, script hashes, and approval state |
 | Expected-results contract | `validation/expected_results_schema.csv` | Public | Stable result IDs and comparison rules; every `expected_value` is blank |
 | Sample-flow contract | `validation/sample_flow_schema.csv` | Public | Stable flow IDs and comparison rules; every expected count is blank |
+| Source metadata | `validation/data_sources.csv` | Public | Value-free format, classification, version, and approval metadata |
+| Ordered source schema | `validation/source_schema.csv` | Public | Sanitized field/type/domain contract without source values or counts |
+| Source validation rules | `validation/validation_rules.csv` | Public | Aggregate-only rule definitions and strict/development actions |
 | Baseline audit | `docs/BASELINE_AUDIT.md` | Public | Scope, limitations, and value-free signoff metadata |
 | Approved baseline bundle | Institutionally approved storage outside Git | Private | Populated contracts, run record, logs, outputs, and permitted hashes |
+| Source-contract review packet | Institutionally approved storage outside Git | Private | Raw-header/category review, aggregate counts, source checksum, validation log, and integrity manifest |
 
 `validation/private/` is ignored as defense in depth. It is not a substitute
 for approved secure storage.
@@ -144,10 +150,43 @@ The disclosure classes used in NRH-000 are:
   retained in the private bundle but are deferred to the complete output
   manifest in a later ticket.
 
+## NRH-003 source contract
+
+The public source contract is split across three value-free files:
+
+| Contract | Purpose |
+|---|---|
+| `validation/data_sources.csv` | Public format, classification, version, and approval metadata for the restricted source |
+| `validation/source_schema.csv` | Exact ordered 36-field names, storage and semantic types, missingness, sensitivity classes, and sanitized lexical domains |
+| `validation/validation_rules.csv` | Stable aggregate-only checks for the identifier, dates, nonnegative timings, empty placeholder, and mixed numeric/literal fields |
+
+`code/lib/data_contracts.do` imports the complete CSV and fails on missing,
+extra, reordered, or mistyped columns. In strict mode it also fails on
+required-value, duplicate-identifier, date, integer, nonnegative, placeholder,
+mixed-value, and categorical-domain violations. Every canonical profile and
+standalone preprocessing call uses strict mode. Development mode is available
+only by directly invoking the validator: it may downgrade content drift to a
+warning, but structural drift remains fatal.
+
+The detailed source-contract log is private even though it contains only
+aggregate evidence. Each row is limited to a rule ID, sanitized source-field
+name, status, and exact invalid count. It must never include an input value,
+identifier, row number, source path, checksum, or row count. The public
+top-level orchestration log and manifest record only the contract version and
+stage return code.
+
+The data steward approved the private packet referenced by the opaque
+secure-artifact ID in `PROJECT.yml` and `validation/data_sources.csv` on
+2026-07-24. That packet contains the raw-header mapping, raw-to-normalized
+category inventory, aggregate missing/distinct counts, permitted source
+checksum, authorized-source validation log, and integrity manifest. Approval
+covers the ordered schema, lexical domains, sensitivity classes, missingness
+rules, and aggregate-only disclosure format. It does not resolve or endorse
+clinical mappings reserved for NRH-004.
+
 ## Approval boundary
 
-Creating these contracts does not approve the source schema, clinical coding,
-model specification, censoring, disclosure safety, or current dependencies.
-Any result-changing difference or unresolved scientific decision remains a
-blocker for later tickets. NRH-000 is complete only when the private baseline
-has been populated, validated, and approved.
+NRH-000 baseline approval and NRH-003 source-contract approval are distinct.
+Neither approves clinical coding, model specification, censoring, or other
+unresolved scientific decisions. Any result-changing difference or unresolved
+scientific decision remains a blocker for later tickets.
