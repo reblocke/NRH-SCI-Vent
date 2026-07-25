@@ -14,6 +14,7 @@ The study data are restricted retrospective EHR data governed by University of U
 | `Data/nrh-sci-raw.dta` | Generated raw Stata intermediate | No | Created from the source CSV by preprocessing. |
 | `Data/nrh-sci-cleaned.dta` | Generated cleaned analysis dataset | No | Consumed by the paper and supplemental analysis scripts. |
 | `Results and Figures/<run_id>/` | Canonical generated tables, figures, logs, and run evidence | No | Created by `run_all.do`; direct legacy calls retain `Results and Figures/<date>/`. |
+| `Verification/<run_id>/` | Value-free no-data verification log and manifest | No | Created by `run_all.do verify`; records `data_accessed=false` and all data-consuming stages as `not_run`. |
 
 ## Key Variables
 

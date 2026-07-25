@@ -24,17 +24,17 @@ This repository contains Stata code to reproduce the analyses and figures for ve
   - `NRH SCI Cohort Supplemental Sensitivity Analyses.do`
 
 ## Reproduction workflow
-Run the canonical public smoke command from the repository root:
+Run canonical no-data public verification from the repository root:
 
 ```bash
-scripts/run_smoke.sh
+scripts/run_verify.sh
 # Windows PowerShell:
-.\scripts\run_smoke.ps1
+.\scripts\run_verify.ps1
 ```
 
-The launchers call `run_all.do smoke` and translate Stata's return code into the process status. Dependency preflight must pass from `vendor/stata/plus/` before the runner checks for data. When an input is present, `validation/source_schema.csv` and `validation/validation_rules.csv` are enforced in strict mode before preprocessing; canonical profiles never use development warning mode. Smoke accepts only `data/synthetic/Working NRH SCI.csv`. NRH-005 will add the approved fixture, so the command currently must pass dependency preflight and then fail clearly for the missing fixture without falling back to restricted data. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` for a platform-specific batch flag.
+The launchers call `run_all.do verify` and translate Stata's return code into the process status. Verify runs dependency preflight from `vendor/stata/plus/`, checks public contract structure, and executes atomic approved-literal mapping tests. It does not accept a data directory, open a source CSV, or invoke preprocessing or analyses. Its manifest must record `run_scope=no_data`, `data_accessed=false`, and every data-consuming stage as `not_run`. The public smoke profile is retired because no synthetic cohort is authorized; do not add a fixture or reinterpret verify as an end-to-end analysis test without a new explicit governance decision. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` for a platform-specific batch flag.
 
-The canonical argument order is `profile`, `data_dir`, `output_root`, and optional `run_id`. Use only generated or opaque non-sensitive run IDs. `full` and `release` require an explicit approved restricted-data directory containing `Working NRH SCI.csv`; neither may use or fall back to the synthetic fixture. `release` also refuses to overwrite existing generated `.dta` files:
+The canonical argument order is `profile`, `data_dir`, `output_root`, and optional `run_id`. Use only generated or opaque non-sensitive run IDs. `full` and `release` require an explicit approved restricted-data directory containing `Working NRH SCI.csv`; neither may infer or substitute another input. `release` also refuses to overwrite existing generated `.dta` files:
 
 ```bash
 stata-mp -b do run_all.do full "/approved/data" "/approved/output"
@@ -45,7 +45,7 @@ On macOS, if Stata is not on `PATH`, configure the launcher:
 
 ```bash
 STATA_BIN="/Applications/Stata/StataBE.app/Contents/MacOS/StataBE" \
-STATA_BATCH_FLAG=-e scripts/run_smoke.sh
+STATA_BATCH_FLAG=-e scripts/run_verify.sh
 ```
 
 Direct execution remains available for legacy compatibility:
@@ -57,7 +57,7 @@ stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
 ```
 
 ## Expected outputs
-Canonical runs write generated artifacts to one unique `Results and Figures/<run_id>/` directory. `run_all.log` and `run_manifest.csv` are value-free orchestration evidence; detailed child logs are under `Logs/`. Direct two-argument legacy calls retain `Results and Figures/<date>/`. These are outputs, not source files, and should not be committed unless a future release explicitly calls for public derived artifacts.
+Restricted canonical runs write generated artifacts to one unique `Results and Figures/<run_id>/` directory. Verify writes value-free evidence under `Verification/<run_id>/`. `run_all.log` and `run_manifest.csv` are value-free orchestration evidence; detailed child logs are under `Logs/`. Direct two-argument legacy calls retain `Results and Figures/<date>/`. These are outputs, not source files, and should not be committed unless a future release explicitly calls for public derived artifacts.
 
 ## Documentation surfaces to keep synchronized
 - `README.md`: human-readable overview and run instructions.
@@ -73,9 +73,12 @@ Canonical runs write generated artifacts to one unique `Results and Figures/<run
 - Search for hard-coded local absolute paths before publishing.
 - Confirm `Data/`, `.dta`, Stata logs, `.gph`, and generated output folders remain ignored.
 - Exercise invalid profiles, missing restricted inputs, wrong working directories, unsafe and duplicate run IDs, and unwritable output roots without using restricted data.
-- Confirm `full` and `release` reject the public synthetic path and that failed runs never substitute another input.
+- Confirm `verify` rejects every data-directory argument and never invokes a data-consuming stage.
+- Confirm `full` and `release` reject the retired fixture location and that failed runs never substitute another input.
 - Confirm every failed run admitted past directory and writability setup has a value-free top-level log and manifest with a nonzero overall status.
-- Run `tests/test_source_contract.do` and confirm reordered, missing, extra, mistyped, required-missing, duplicate-ID, invalid-date, negative, and unexpected-category fixtures fail as specified; development mode may warn only for content drift and must never bypass structural failures.
+- Run `tests/test_public_contracts.do` and confirm both Stata contract libraries load and every public CSV contract passes structural and cross-reference checks without source data.
+- Run `tests/test_value_mappings.do` only as atomic public-literal code tests; do not combine fields into patient- or cohort-shaped fabricated records.
+- Do not claim public execution coverage for row-level source-content mutations. Strict content enforcement remains active in authorized `full` and `release` runs, and any new public row-shaped test requires a governance decision.
 - Confirm source-contract logs contain only rule IDs, sanitized field names, status, and aggregate invalid counts, with no values, identifiers, row numbers, or source paths.
 - Confirm dependency preflight runs before the source-file check, resolves only
   from `vendor/stata/plus/`, and detects missing or modified files.

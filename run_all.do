@@ -7,11 +7,17 @@ global NRH_DEPENDENCY_MANIFEST_SHA256 ""
 
 args profile data_dir output_root run_id
 
-if strtrim("`profile'") == "" local profile "smoke"
+if strtrim("`profile'") == "" local profile "verify"
 local profile = lower(strtrim("`profile'"))
 
-if !inlist("`profile'", "smoke", "full", "release") {
-    di as err "Invalid profile `profile'. Choose smoke, full, or release."
+if "`profile'" == "smoke" {
+    di as err "The public smoke profile is retired because no synthetic cohort is authorized."
+    di as err "Use the verify profile for explicitly no-data public verification."
+    exit 198
+}
+
+if !inlist("`profile'", "verify", "full", "release") {
+    di as err "Invalid profile `profile'. Choose verify, full, or release."
     exit 198
 }
 
@@ -26,14 +32,18 @@ foreach required_file in ///
     "NRH SCI Cohort Paper Analysis.do" ///
     "NRH SCI Cohort Supplemental Sensitivity Analyses.do" ///
     "config/default.do" ///
-    "config/smoke.do" ///
+    "config/verify.do" ///
     "config/full.do" ///
     "config/release.do" ///
     "code/00_preflight.do" ///
     "code/lib/data_contracts.do" ///
     "code/lib/value_mappings.do" ///
+    "tests/test_public_contracts.do" ///
+    "tests/test_value_mappings.do" ///
     "vendor/stata/manifest.csv" ///
+    "validation/data_sources.csv" ///
     "validation/expected_results_schema.csv" ///
+    "validation/sample_flow_schema.csv" ///
     "validation/source_schema.csv" ///
     "validation/value_mappings.csv" ///
     "validation/validation_rules.csv" {
@@ -45,21 +55,24 @@ foreach required_file in ///
 }
 
 include "config/default.do"
-if "`profile'" == "smoke" include "config/smoke.do"
+if "`profile'" == "verify" include "config/verify.do"
 if "`profile'" == "full" include "config/full.do"
 if "`profile'" == "release" include "config/release.do"
 
-if "`profile'" == "smoke" {
-    if strtrim("`data_dir'") != "" & strtrim("`data_dir'") != "`nrh_smoke_data_dir'" {
-        di as err "The smoke profile is restricted to the public synthetic data directory."
+local nrh_run_scope "restricted_analysis"
+local nrh_data_accessed "false"
+
+if "`profile'" == "verify" {
+    local nrh_run_scope "no_data"
+    if strtrim("`data_dir'") != "" {
+        di as err "The verify profile does not accept or access a data directory."
         exit 198
     }
-    local data_dir "`nrh_smoke_data_dir'"
 }
 else {
     if strtrim("`data_dir'") == "" {
         di as err "The `profile' profile requires an explicit approved data directory."
-        di as err "Restricted-data profiles never fall back to the synthetic fixture."
+        di as err "Restricted-data profiles never infer or substitute another input."
         exit 198
     }
 
@@ -85,7 +98,7 @@ else {
     }
     if inlist("`nrh_data_dir_normalized'", "data/synthetic", "./data/synthetic") | ///
         regexm("`nrh_data_dir_normalized'", "/data/synthetic$") {
-        di as err "The `profile' profile cannot use the public synthetic data directory."
+        di as err "The retired public-fixture location is not an authorized clinical-data directory."
         di as err "Pass an explicit approved restricted-data directory."
         exit 198
     }
@@ -143,14 +156,25 @@ local nrh_overall_rc 0
 local nrh_failed_stage ""
 local nrh_dependency_preflight_rc .
 local nrh_dependency_manifest_sha256 ""
+local nrh_public_contract_rc .
+local nrh_public_contract_status "not_run"
+local nrh_mapping_unit_rc .
+local nrh_mapping_unit_status "not_run"
 local nrh_preflight_rc .
+local nrh_preflight_status "not_run"
 local nrh_source_contract_rc .
 local nrh_source_contract_version .
+local nrh_source_contract_status "not_run"
 local nrh_preprocessing_rc .
+local nrh_preprocessing_status "not_run"
 local nrh_cleaned_validation_rc .
+local nrh_cleaned_validation_status "not_run"
 local nrh_paper_rc .
+local nrh_paper_status "not_run"
 local nrh_supplemental_rc .
+local nrh_supplemental_status "not_run"
 local nrh_output_check_rc .
+local nrh_output_check_status "not_run"
 local nrh_manifest_rc .
 local nrh_toplog_rc 0
 
@@ -164,6 +188,7 @@ if `nrh_toplog_rc' {
 }
 file write `nrh_toplog' "NRH-SCI-Vent orchestration" _n
 file write `nrh_toplog' "profile=`profile'" _n
+file write `nrh_toplog' "run_scope=`nrh_run_scope'" _n
 file write `nrh_toplog' "run_id=`run_id'" _n
 file write `nrh_toplog' "started_local=`nrh_started'" _n
 file close `nrh_toplog'
@@ -195,20 +220,57 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 2: profile and input preflight.
-if `nrh_overall_rc' == 0 {
+* Stages 2-3 for verify: public contracts and atomic mapping behavior only.
+if "`profile'" == "verify" & `nrh_overall_rc' == 0 {
+    capture noisily do "tests/test_public_contracts.do"
+    local nrh_public_contract_rc = _rc
+    local nrh_public_contract_status = ///
+        cond(`nrh_public_contract_rc' == 0, "passed", "failed")
+    di as txt "NRH_STAGE public_contract rc=`nrh_public_contract_rc'"
+    capture file open `nrh_toplog' using "`master_log'", write text append
+    if _rc {
+        local nrh_toplog_rc = _rc
+    }
+    else {
+        file write `nrh_toplog' ///
+            "stage.public_contract.rc=`nrh_public_contract_rc'" _n
+        file close `nrh_toplog'
+    }
+    if `nrh_public_contract_rc' {
+        local nrh_overall_rc `nrh_public_contract_rc'
+        local nrh_failed_stage "public_contract"
+    }
+}
+
+if "`profile'" == "verify" & `nrh_overall_rc' == 0 {
+    capture noisily do "tests/test_value_mappings.do"
+    local nrh_mapping_unit_rc = _rc
+    local nrh_mapping_unit_status = ///
+        cond(`nrh_mapping_unit_rc' == 0, "passed", "failed")
+    di as txt "NRH_STAGE mapping_unit rc=`nrh_mapping_unit_rc'"
+    capture file open `nrh_toplog' using "`master_log'", write text append
+    if _rc {
+        local nrh_toplog_rc = _rc
+    }
+    else {
+        file write `nrh_toplog' ///
+            "stage.mapping_unit.rc=`nrh_mapping_unit_rc'" _n
+        file close `nrh_toplog'
+    }
+    if `nrh_mapping_unit_rc' {
+        local nrh_overall_rc `nrh_mapping_unit_rc'
+        local nrh_failed_stage "mapping_unit"
+    }
+}
+
+* Data stage 1: profile and input preflight.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     local nrh_preflight_rc 0
 
     capture confirm file "`data_dir'/`nrh_source_file'"
     if _rc {
         local nrh_preflight_rc 601
-        if "`profile'" == "smoke" {
-            di as err "The public synthetic fixture is not present at `data_dir'/`nrh_source_file'."
-            di as err "NRH-005 will supply the approved synthetic fixture; no restricted-data fallback was attempted."
-        }
-        else {
-            di as err "Could not find the required source CSV in the approved data directory."
-        }
+        di as err "Could not find the required source CSV in the approved data directory."
     }
 
     if `nrh_preflight_rc' == 0 & `nrh_refuse_derived_overwrite' {
@@ -222,6 +284,8 @@ if `nrh_overall_rc' == 0 {
         }
     }
 
+    local nrh_preflight_status = ///
+        cond(`nrh_preflight_rc' == 0, "passed", "failed")
     di as txt "NRH_STAGE preflight rc=`nrh_preflight_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
     if _rc {
@@ -237,11 +301,12 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 3: validate the ordered source contract before preprocessing.
-if `nrh_overall_rc' == 0 {
+* Data stage 2: validate the ordered source contract before preprocessing.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     capture noisily do "code/lib/data_contracts.do"
     local nrh_source_contract_rc = _rc
     if `nrh_source_contract_rc' == 0 {
+        local nrh_data_accessed "true"
         capture noisily nrh_validate_source_contract ///
             using "`data_dir'/`nrh_source_file'", ///
             schema("validation/source_schema.csv") ///
@@ -253,6 +318,8 @@ if `nrh_overall_rc' == 0 {
             local nrh_source_contract_version = r(contract_version)
         }
     }
+    local nrh_source_contract_status = ///
+        cond(`nrh_source_contract_rc' == 0, "passed", "failed")
     di as txt "NRH_STAGE source_contract rc=`nrh_source_contract_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
     if _rc {
@@ -269,11 +336,13 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 4: unchanged preprocessing body through the legacy entry point.
-if `nrh_overall_rc' == 0 {
+* Data stage 3: preprocessing through the legacy entry point.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Preprocessing.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
     local nrh_preprocessing_rc = _rc
+    local nrh_preprocessing_status = ///
+        cond(`nrh_preprocessing_rc' == 0, "passed", "failed")
     capture log close
     di as txt "NRH_STAGE preprocessing rc=`nrh_preprocessing_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
@@ -290,10 +359,12 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 5: sentinel cleaned-file validation. NRH-006 adds the cleaned contract.
-if `nrh_overall_rc' == 0 {
+* Data stage 4: sentinel cleaned-file validation. NRH-006 adds the contract.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
     local nrh_cleaned_validation_rc = _rc
+    local nrh_cleaned_validation_status = ///
+        cond(`nrh_cleaned_validation_rc' == 0, "passed", "failed")
     di as txt "NRH_STAGE cleaned_validation rc=`nrh_cleaned_validation_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
     if _rc {
@@ -309,11 +380,12 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 6: unchanged paper-analysis body through the legacy entry point.
-if `nrh_overall_rc' == 0 {
+* Data stage 5: paper analysis through the legacy entry point.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Paper Analysis.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
     local nrh_paper_rc = _rc
+    local nrh_paper_status = cond(`nrh_paper_rc' == 0, "passed", "failed")
     capture log close
     di as txt "NRH_STAGE paper rc=`nrh_paper_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
@@ -330,11 +402,13 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 7: unchanged supplemental-analysis body through the legacy entry point.
-if `nrh_overall_rc' == 0 {
+* Data stage 6: supplemental analysis through the legacy entry point.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Supplemental Sensitivity Analyses.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
     local nrh_supplemental_rc = _rc
+    local nrh_supplemental_status = ///
+        cond(`nrh_supplemental_rc' == 0, "passed", "failed")
     capture log close
     di as txt "NRH_STAGE supplemental rc=`nrh_supplemental_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
@@ -351,8 +425,8 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 8: check the output-presence rows in the public value-free contract.
-if `nrh_overall_rc' == 0 {
+* Data stage 7: check required output presence.
+if "`profile'" != "verify" & `nrh_overall_rc' == 0 {
     local nrh_output_check_rc 0
     capture noisily import delimited using "`nrh_expected_results_contract'", ///
         clear varnames(1) stringcols(_all) bindquote(strict)
@@ -385,6 +459,8 @@ if `nrh_overall_rc' == 0 {
         }
     }
 
+    local nrh_output_check_status = ///
+        cond(`nrh_output_check_rc' == 0, "passed", "failed")
     di as txt "NRH_STAGE output_check rc=`nrh_output_check_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
     if _rc {
@@ -412,9 +488,11 @@ capture file open `nrh_manifest' using "`manifest_file'", write text replace
 local nrh_manifest_rc = _rc
 if `nrh_manifest_rc' == 0 {
     file write `nrh_manifest' "key,value" _n
-    file write `nrh_manifest' "manifest_version,1" _n
+    file write `nrh_manifest' "manifest_version,2" _n
     file write `nrh_manifest' "project,NRH-SCI-Vent" _n
     file write `nrh_manifest' "profile,`profile'" _n
+    file write `nrh_manifest' "run_scope,`nrh_run_scope'" _n
+    file write `nrh_manifest' "data_accessed,`nrh_data_accessed'" _n
     file write `nrh_manifest' "run_id,`run_id'" _n
     file write `nrh_manifest' "started_local,`nrh_started'" _n
     file write `nrh_manifest' "completed_local,`nrh_completed'" _n
@@ -427,16 +505,35 @@ if `nrh_manifest_rc' == 0 {
     file write `nrh_manifest' "dependency_vendor_path,vendor/stata/plus" _n
     file write `nrh_manifest' ///
         "dependency_preflight_rc,`nrh_dependency_preflight_rc'" _n
+    file write `nrh_manifest' ///
+        "public_contract_rc,`nrh_public_contract_rc'" _n
+    file write `nrh_manifest' ///
+        "public_contract_status,`nrh_public_contract_status'" _n
+    file write `nrh_manifest' "mapping_unit_rc,`nrh_mapping_unit_rc'" _n
+    file write `nrh_manifest' ///
+        "mapping_unit_status,`nrh_mapping_unit_status'" _n
     file write `nrh_manifest' "preflight_rc,`nrh_preflight_rc'" _n
+    file write `nrh_manifest' "preflight_status,`nrh_preflight_status'" _n
     file write `nrh_manifest' ///
         "source_contract_version,`nrh_source_contract_version'" _n
     file write `nrh_manifest' ///
         "source_contract_rc,`nrh_source_contract_rc'" _n
+    file write `nrh_manifest' ///
+        "source_contract_status,`nrh_source_contract_status'" _n
     file write `nrh_manifest' "preprocessing_rc,`nrh_preprocessing_rc'" _n
+    file write `nrh_manifest' ///
+        "preprocessing_status,`nrh_preprocessing_status'" _n
     file write `nrh_manifest' "cleaned_validation_rc,`nrh_cleaned_validation_rc'" _n
+    file write `nrh_manifest' ///
+        "cleaned_validation_status,`nrh_cleaned_validation_status'" _n
     file write `nrh_manifest' "paper_rc,`nrh_paper_rc'" _n
+    file write `nrh_manifest' "paper_status,`nrh_paper_status'" _n
     file write `nrh_manifest' "supplemental_rc,`nrh_supplemental_rc'" _n
+    file write `nrh_manifest' ///
+        "supplemental_status,`nrh_supplemental_status'" _n
     file write `nrh_manifest' "output_check_rc,`nrh_output_check_rc'" _n
+    file write `nrh_manifest' ///
+        "output_check_status,`nrh_output_check_status'" _n
     file write `nrh_manifest' "top_log_rc,`nrh_toplog_rc'" _n
     file write `nrh_manifest' "failed_stage,`nrh_failed_stage'" _n
     file write `nrh_manifest' "overall_rc,`nrh_overall_rc'" _n
@@ -453,6 +550,24 @@ capture file open `nrh_toplog' using "`master_log'", write text append
 if !_rc {
     file write `nrh_toplog' "stage.manifest.rc=`nrh_manifest_rc'" _n
     file write `nrh_toplog' "completed_local=`nrh_completed'" _n
+    file write `nrh_toplog' "data_accessed=`nrh_data_accessed'" _n
+    file write `nrh_toplog' ///
+        "stage.public_contract.status=`nrh_public_contract_status'" _n
+    file write `nrh_toplog' ///
+        "stage.mapping_unit.status=`nrh_mapping_unit_status'" _n
+    file write `nrh_toplog' ///
+        "stage.preflight.status=`nrh_preflight_status'" _n
+    file write `nrh_toplog' ///
+        "stage.source_contract.status=`nrh_source_contract_status'" _n
+    file write `nrh_toplog' ///
+        "stage.preprocessing.status=`nrh_preprocessing_status'" _n
+    file write `nrh_toplog' ///
+        "stage.cleaned_validation.status=`nrh_cleaned_validation_status'" _n
+    file write `nrh_toplog' "stage.paper.status=`nrh_paper_status'" _n
+    file write `nrh_toplog' ///
+        "stage.supplemental.status=`nrh_supplemental_status'" _n
+    file write `nrh_toplog' ///
+        "stage.output_check.status=`nrh_output_check_status'" _n
     file write `nrh_toplog' "overall.rc=`nrh_overall_rc'" _n
     file write `nrh_toplog' "failed_stage=`nrh_failed_stage'" _n
     file close `nrh_toplog'

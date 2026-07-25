@@ -20,6 +20,7 @@ Data/
 
 # Generated analysis outputs
 Results and Figures/
+Verification/
 *.tif
 *.tiff
 *.png

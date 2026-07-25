@@ -14,8 +14,8 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - Author response DOI: https://doi.org/10.1177/19433654261450544
 
 ## What is in this repository
-- `run_all.do`: canonical smoke/full/release orchestration, fail-fast dependency/input/source-contract staging, mapping-aware preprocessing, output-presence checks, and value-free run evidence.
-- `config/`: shared defaults plus smoke and release profile configuration.
+- `run_all.do`: canonical verify/full/release orchestration, with explicitly no-data public verification and fail-fast restricted analysis staging.
+- `config/`: shared defaults plus verify and release profile configuration.
 - `code/00_preflight.do`: offline SHA-256 and controlled-ado resolution gate
   that runs before any source-data check.
 - `code/lib/data_contracts.do`: source-contract version 2 enforcement for the
@@ -24,7 +24,7 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - `code/lib/value_mappings.do`: deterministic executor for mapping-contract
   version 1 at `validation/value_mappings.csv`; unlisted categorical input
   fails rather than being guessed.
-- `scripts/`: POSIX and PowerShell smoke launchers plus a Stata status adapter.
+- `scripts/`: POSIX and PowerShell no-data verify launchers, a Stata status adapter, and retired smoke adapters.
 - `vendor/stata/`: exact seven-file runtime closure, dependency manifest, and
   third-party license notices.
 - `NRH SCI Cohort Preprocessing.do`: imports the restricted source CSV, creates Stata analysis datasets, and derives analytic variables.
@@ -48,14 +48,15 @@ The source data are restricted retrospective EHR data governed by University of 
 Run from the repository root. Arguments to `run_all.do` are `profile`, `data_dir`, `output_root`, and optional `run_id`.
 
 ```bash
-stata-mp -b do run_all.do smoke
-scripts/run_smoke.sh
+stata-mp -b do run_all.do verify
+scripts/run_verify.sh
 ```
 
-- `smoke` is the default and accepts only `data/synthetic/Working NRH SCI.csv`. NRH-005 has not yet supplied that approved fixture, so smoke currently fails with a deliberate missing-fixture error.
+- `verify` is the default and does not accept or access a data directory. It checks controlled dependencies, public contract structure, and atomic approved-literal mappings; preprocessing and analyses are recorded as `not_run`.
 - `full` requires an explicit approved restricted-data directory containing `Working NRH SCI.csv`.
 - `release` requires the same restricted input and filename and refuses to overwrite existing derived `.dta` files.
-- Restricted profiles never use or fall back to the synthetic fixture.
+- `smoke` is retired because no public synthetic cohort is authorized. A future reconsideration requires an explicit governance decision.
+- Restricted profiles never infer or substitute another input.
 - Every admitted run uses a unique path-safe run ID and refuses to overwrite an existing run directory; explicit run IDs must also be opaque and non-sensitive.
 - Dependency preflight prepends `vendor/stata/plus/`, discards cached
   user-written programs, verifies all seven files, and fails before input
@@ -75,12 +76,13 @@ stata-mp -b do run_all.do full "/approved/data" "/approved/output"
 stata-mp -b do run_all.do release "/approved/data" "/approved/output" "path-safe-run-id"
 ```
 
-The smoke launchers translate Stata's return code into the process status, including on macOS. Direct execution of the three legacy scripts remains supported; two-argument calls retain the historical dated-output behavior.
+The verify launchers translate Stata's return code into the process status, including on macOS. Direct execution of the three legacy scripts remains supported; two-argument calls retain the historical dated-output behavior.
 
 ## Expected outputs
 - Private generated datasets: `<data_dir>/nrh-sci-raw.dta` and `<data_dir>/nrh-sci-cleaned.dta`; direct legacy defaults use `Data/`.
 - Canonical publication outputs: unique folders under `Results and Figures/<run_id>/`.
 - Canonical value-free evidence: `<run_id>/run_all.log` and `<run_id>/run_manifest.csv`.
+- No-data verification evidence: unique folders under `Verification/<run_id>/`.
 - Detailed logs: `<run_id>/Logs/`, including dependency-preflight evidence.
 - Legacy standalone outputs: dated folders under `Results and Figures/<date>/`.
 - Generated outputs are not tracked in git.
@@ -93,7 +95,7 @@ The smoke launchers translate Stata's return code into the process status, inclu
   requires a new signed decision and full baseline review.
 - Preserve the exact vendored dependency closure and manifest hashes unless a
   reviewed dependency ticket explicitly authorizes a change.
-- Never substitute unapproved synthetic data or route a restricted profile to the public fixture.
+- Never add a fabricated public cohort or route restricted data into public verification.
 - Link to the open-access SAGE article and PubMed record; do not mirror full article text in the repository.
 - Keep README, `llms.txt`, `CITATION.cff`, `AGENTS.md`, `DECISIONS.md`, mapping
   contracts, and data dictionary metadata synchronized after article, release,

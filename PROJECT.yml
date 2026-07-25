@@ -83,6 +83,30 @@ dependencies:
     preflight_path: code/00_preflight.do
     runtime_network_installation: false
 
+public_verification:
+  version: 1
+  profile: verify
+  run_scope: no_data
+  accepts_data_directory: false
+  data_accessed: false
+  data_consuming_stage_status: not_run
+  default_output_root: Verification
+  retired_profile: smoke
+  fabricated_cohort_authorized: false
+  governance:
+    decided_at: "2026-07-25"
+    decision_roles:
+      - scientific owner
+      - data steward
+    change_policy: Any public patient- or cohort-shaped fixture requires a new explicit governance decision before implementation.
+  tests:
+    - tests/test_public_contracts.do
+    - tests/test_value_mappings.do
+    - tests/validate_source_contracts.py
+    - tests/validate_no_data_workflow.py
+    - tests/test_run_verify.sh
+  ci: .github/workflows/public-validation.yml
+
 source_contract:
   version: 2
   status: approved
@@ -91,7 +115,6 @@ source_contract:
   public_category_domains: sanitized normalized literals
   normalization: Unicode NFC, trim surrounding whitespace, uppercase
   strict_profiles:
-    - smoke
     - full
     - release
   development_warning_mode:
@@ -102,7 +125,9 @@ source_contract:
     source_schema: validation/source_schema.csv
     validation_rules: validation/validation_rules.csv
   validator: code/lib/data_contracts.do
-  tests: tests/test_source_contract.do
+  tests:
+    - tests/test_public_contracts.do
+    - tests/validate_source_contracts.py
   approval:
     approved_at: "2026-07-25"
     approver_roles:

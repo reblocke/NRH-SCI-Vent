@@ -39,18 +39,19 @@ cd NRH-SCI-Vent
 
 2) **Choose a profile.** `run_all.do` is the canonical entry point and accepts, in order, `profile`, `data_dir`, `output_root`, and an optional `run_id`.
 
-- `smoke` is the default and is restricted to the approved public fixture path, `data/synthetic/Working NRH SCI.csv`. NRH-005 will add that fixture; until then, the canonical smoke command intentionally exits nonzero with a clear missing-fixture message.
-- `full` requires an explicit approved restricted-data directory containing `Working NRH SCI.csv` and never falls back to synthetic data.
+- `verify` is the default. It checks the controlled Stata dependencies, public contract structure, and atomic approved-literal mappings without accepting a data directory or running preprocessing or analyses.
+- `full` requires an explicit approved restricted-data directory containing `Working NRH SCI.csv` and never infers or substitutes another input.
 - `release` has the same restricted-input and filename requirement and also refuses to overwrite existing generated `.dta` files.
+- `smoke` is retired because no public synthetic cohort is authorized. A future reconsideration requires an explicit governance decision.
 
-Run the public smoke profile from the repository root:
+Run explicitly no-data public verification from the repository root:
 
 ```sh
-stata-mp -b do run_all.do smoke
+stata-mp -b do run_all.do verify
 # macOS/Linux launcher
-scripts/run_smoke.sh
+scripts/run_verify.sh
 # Windows PowerShell launcher
-.\scripts\run_smoke.ps1
+.\scripts\run_verify.ps1
 ```
 
 For an authorized restricted run, pass the input and output locations explicitly:
@@ -60,13 +61,15 @@ stata-mp -b do run_all.do full "/approved/data" "/approved/output"
 stata-mp -b do run_all.do release "/approved/data" "/approved/output" "2026-07-24T120000_release"
 ```
 
-The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if dependency preflight, input preflight, strict source-contract validation, approved value mapping, or any analysis stage fails. Dependency preflight runs before the source-file check, source-contract version 2 runs before preprocessing, and preprocessing executes mapping-contract version 1 from `validation/value_mappings.csv`. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; private source-validation diagnostics contain stable rule IDs, and private mapping diagnostics contain sanitized target-variable names, status, and safe aggregate counts—never input values, identifiers, row numbers, or source paths. Detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
+The runner must start from the repository root. Every admitted invocation creates one unique, non-overwritable `<output_root>/<run_id>/` directory. The `verify` profile writes under `Verification/` by default and records `run_scope=no_data`, `data_accessed=false`, passing public-contract and mapping-unit stages, and every data-consuming stage as `not_run`. It never opens a source CSV or invokes preprocessing, paper analysis, or supplemental analysis. Full and release runs fail fast if dependency preflight, input preflight, strict source-contract validation, approved value mapping, or any analysis stage fails. For those restricted profiles, source-contract version 2 runs before preprocessing, and preprocessing executes mapping-contract version 1 from `validation/value_mappings.csv`.
+
+Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; private source-validation diagnostics contain stable rule IDs, and private mapping diagnostics contain sanitized target-variable names, status, and safe aggregate counts—never input values, identifiers, row numbers, or source paths. Detailed child logs and generated outputs appear only for stages that execute. Use a generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The verify launchers translate Stata's return code into the process status, including on macOS Stata builds that otherwise return process status zero.
 
 The POSIX launcher defaults to `-e` on macOS and `-b` on other Unix-like systems; the PowerShell launcher defaults to `/e` for Windows Stata. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` to override the platform default. For example, with the macOS app binary:
 
 ```sh
 STATA_BIN="/Applications/Stata/StataBE.app/Contents/MacOS/StataBE" \
-STATA_BATCH_FLAG=-e scripts/run_smoke.sh
+STATA_BATCH_FLAG=-e scripts/run_verify.sh
 ```
 
 The legacy scripts remain directly executable for compatibility. Their first two optional arguments are `data_dir` and `output_root`; without an orchestration `run_id`, they retain the historical `Results and Figures/<date>/` layout:
@@ -115,6 +118,7 @@ The analysis script exports (filenames may be updated as wording evolves):
 - Supplemental tables in `xlsx` under `Results and Figures/<run_id>/`.
 - Orchestration evidence at `Results and Figures/<run_id>/run_all.log` and `run_manifest.csv`.
 - Dependency-preflight and detailed script logs under `Results and Figures/<run_id>/Logs/`.
+- No-data verification evidence under `Verification/<run_id>/`; it contains no analysis outputs.
 
 (Figure 1 was generated separately)
 
@@ -151,16 +155,17 @@ The response analyses require the same restricted dataset as the paper analyses.
 ├── DECISIONS.md                          # Public scientific and data-governance decision record
 ├── CITATION.cff                          # Software and preferred article citation metadata
 ├── AGENTS.md                             # Repository-specific guidance for coding agents
-├── run_all.do                            # Canonical smoke/full/release orchestration entry point
+├── run_all.do                            # Canonical verify/full/release orchestration entry point
 ├── code/00_preflight.do                  # Offline dependency resolution and SHA-256 gate
 ├── code/lib/data_contracts.do            # Strict source-schema and domain validator
 ├── code/lib/value_mappings.do            # Approved deterministic categorical mapping helper
 ├── config/                               # Profile defaults and overrides
-├── scripts/                              # Cross-platform smoke launchers
+├── scripts/                              # No-data verify launchers and retired smoke adapters
 ├── vendor/stata/                         # Locked runtime ado files, manifest, and licenses
 ├── validation/                           # Public value-free baseline, source, and mapping contracts
-├── tests/test_source_contract.do         # Synthetic-only source-contract failure tests
-├── tests/test_value_mappings.do          # Synthetic-only accepted/missing/rejected mapping tests
+├── tests/test_public_contracts.do        # Data-free Stata contract-structure checks
+├── tests/test_value_mappings.do          # Atomic accepted/missing/rejected mapping tests
+├── tests/validate_no_data_workflow.py    # Public no-data boundary and workflow checks
 ├── data_dictionary.md / data_dictionary.csv
 │                                          # Public variable, file, and output documentation
 ├── NRH SCI Cohort Preprocessing.do      # Prepares analysis dataset(s) and helper variables
@@ -169,11 +174,12 @@ The response analyses require the same restricted dataset as the paper analyses.
 │                                          # Produces author-response supplemental outputs
 ├── Data/                                # Ignored private inputs and generated .dta files
 ├── Results and Figures/                 # Ignored generated outputs by run ID or legacy date
+├── Verification/                        # Ignored value-free no-data verification evidence
 └── LICENSE                              # Code license (MIT)
 ```
 
 ## Workflow
-1. `run_all.do` — validates the profile, paths, and unique run ID; runs dependency preflight before input preflight; enforces strict source-contract version 2; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
+1. `run_all.do` — runs explicitly no-data public verification or, for `full` and `release`, validates paths and unique run IDs, runs dependency and input preflight, enforces strict source-contract version 2, invokes each legacy stage, checks cleaned-data and output presence, and finalizes value-free run evidence.
 2. `code/00_preflight.do` — prepends the locked ado tree, verifies every manifest SHA-256, and confirms controlled command and scheme resolution without network access.
 3. `NRH SCI Cohort Preprocessing.do` — independently re-enforces the strict source contract for standalone safety, reads the complete `Working NRH SCI.csv` without positional truncation, applies mapping-contract version 1 through `code/lib/value_mappings.do`, derives composites directly from stable numeric codes with missing-value guards, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
 4. `NRH SCI Cohort Paper Analysis.do` — reads `nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).

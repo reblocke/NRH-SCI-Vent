@@ -8,9 +8,12 @@ All notable public documentation and release metadata changes for this repositor
 - Advanced the strict source contract to version 2 for C8 and the prospective C1–C8 by AIS A–D domain.
 - Added mapping-contract version 1 with deterministic source-to-code mappings, explicit missing actions, documented narrative exceptions, and reject-unlisted behavior.
 - Replaced order-dependent categorical encoding in preprocessing with approved explicit mappings and direct numeric derivations while retaining stable target codes and labels.
-- Named the scientific-owner-controlled 2023-09-30 administrative censoring constant and added structural and synthetic mapping validation.
+- Named the scientific-owner-controlled 2023-09-30 administrative censoring constant and added structural and atomic mapping validation.
 - Updated the public data dictionaries and workflow documentation. No restricted data, populated aggregates, or real-data outputs are included.
 - Preserved the paper and supplemental analysis scripts, dependency closure, `CITATION.cff`, release tags, and latest-release metadata. No release or tag is created by these unreleased changes.
+- Re-scoped NRH-005 from a deferred synthetic-cohort smoke test to explicitly no-data public verification because no fabricated public cohort is authorized.
+- Added the `verify` profile, cross-platform return-code launchers, value-free no-data manifests, structural Stata contract checks, launcher regression tests, and data-free GitHub validation.
+- Retired the `smoke` profile with a clear nonzero migration message. Full and release remain the only data-consuming profiles.
 
 ## v0.2.0 - paper and author-response code
 

@@ -168,10 +168,11 @@ The public source contract is split across three value-free files:
 `code/lib/data_contracts.do` imports the complete CSV and fails on missing,
 extra, reordered, or mistyped columns. In strict mode it also fails on
 required-value, duplicate-identifier, date, integer, nonnegative, placeholder,
-mixed-value, and categorical-domain violations. Every canonical profile and
-standalone preprocessing call uses strict mode. Development mode is available
-only by directly invoking the validator: it may downgrade content drift to a
-warning, but structural drift remains fatal.
+mixed-value, and categorical-domain violations. The data-consuming `full` and
+`release` profiles and standalone preprocessing use strict mode. The no-data
+`verify` profile does not invoke the source validator. Development mode is
+available only by directly invoking the validator: it may downgrade content
+drift to a warning, but structural drift remains fatal.
 
 The detailed source-contract log is private even though it contains only
 aggregate evidence. Each row is limited to a rule ID, sanitized source-field
@@ -223,6 +224,35 @@ The scientific owner and data steward approved the eight decisions on
 2026-07-25. Public metadata use the opaque secure-artifact ID
 `NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61`; the private packet location,
 contents, counts, and integrity hashes are not public.
+
+## NRH-005 no-data public verification
+
+No public synthetic cohort is authorized. NRH-005 therefore replaces the
+deferred end-to-end smoke concept with the explicitly no-data `verify` profile.
+Verify checks the controlled Stata dependency closure, loads both executable
+contract libraries, validates the public contract files structurally, and
+executes isolated approved-literal mapping unit cases. It does not accept a
+data directory, open `Working NRH SCI.csv`, invoke preprocessing, or run either
+analysis script.
+
+`tests/test_public_contracts.do` operates only on public contract metadata and
+does not construct patient- or cohort-shaped records. The atomic cases in
+`tests/test_value_mappings.do` exercise individual public mapping literals
+without combining clinical fields. Public execution coverage for row-level
+source-content mutations is intentionally not claimed. Strict content
+enforcement remains active when an authorized `full` or `release` run opens the
+restricted source.
+
+Successful verify evidence records `run_scope=no_data`, `data_accessed=false`,
+the public-contract and mapping-unit stages as passed, and every data-consuming
+stage as `not_run`. Evidence is written to a unique ignored
+`Verification/<run_id>/` directory. The data-free GitHub workflow runs Python
+contract and mutation validation plus launcher status tests; it does not claim
+to run Stata or any analysis.
+
+The scientific owner and data steward decided on 2026-07-25 not to authorize a
+fabricated public cohort. Any future patient- or cohort-shaped fixture requires
+a new explicit governance decision before implementation.
 
 ## Approval boundary
 

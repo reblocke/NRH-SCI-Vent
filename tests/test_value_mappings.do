@@ -1,4 +1,5 @@
-* Synthetic-only tests for the NRH-004 value-mapping contract.
+* Atomic public-literal tests for the NRH-004 value-mapping contract.
+* These cases do not combine variables into patient- or cohort-shaped records.
 
 version 18
 clear
@@ -129,9 +130,9 @@ local nrh_sex_label_1 : label (sex) 1
 assert "`nrh_sex_label_0'" == "Female"
 assert "`nrh_sex_label_1'" == "Male"
 
-* A generated synthetic unlisted literal must fail closed without appearing in
-* the aggregate diagnostics. The literal is assembled at runtime so it is not
-* embedded in this public test source.
+* One generated unlisted unit-test literal must fail closed without appearing
+* in aggregate diagnostics. It is assembled at runtime so it is not embedded
+* in this public test source.
 clear
 set obs 1
 generate strL nrh_test_input = ///
@@ -164,4 +165,4 @@ if strtrim("`status_file'") != "" {
     file close `nrh_status'
 }
 
-di as result "NRH value-mapping synthetic tests passed."
+di as result "NRH atomic value-mapping tests passed."

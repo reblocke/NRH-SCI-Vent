@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the public NRH-004 source and value-mapping contracts."""
+"""Validate public source, mapping, and no-data verification contracts."""
 
 from __future__ import annotations
 
@@ -545,8 +545,21 @@ def validate_project() -> None:
     }
     assert all(value in analysis_files for value in frozen_hashes)
 
+    public_verification = top_level_section(text, "public_verification")
+    assert "  profile: verify\n" in public_verification
+    assert "  run_scope: no_data\n" in public_verification
+    assert "  accepts_data_directory: false\n" in public_verification
+    assert "  data_accessed: false\n" in public_verification
+    assert "  data_consuming_stage_status: not_run\n" in public_verification
+    assert "  fabricated_cohort_authorized: false\n" in public_verification
+    assert "      - scientific owner\n" in public_verification
+    assert "      - data steward\n" in public_verification
+
     source_contract = top_level_section(text, "source_contract")
     assert "  version: 2\n" in source_contract
+    assert "    - full\n" in source_contract
+    assert "    - release\n" in source_contract
+    assert "    - smoke\n" not in source_contract
     assert "  approval_history:\n" in source_contract
     assert (
         "NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f"
@@ -803,14 +816,23 @@ def main() -> None:
             ROOT / "NRH SCI Cohort Preprocessing.do",
             ROOT / "PROJECT.yml",
             ROOT / "README.md",
+            ROOT / "config" / "verify.do",
             ROOT / "code" / "lib" / "data_contracts.do",
             ROOT / "code" / "lib" / "value_mappings.do",
             ROOT / "data_dictionary.csv",
             ROOT / "data_dictionary.md",
             ROOT / "llms.txt",
             ROOT / "run_all.do",
-            ROOT / "tests" / "test_source_contract.do",
+            ROOT / "scripts" / "run_smoke.do",
+            ROOT / "scripts" / "run_smoke.ps1",
+            ROOT / "scripts" / "run_smoke.sh",
+            ROOT / "scripts" / "run_verify.do",
+            ROOT / "scripts" / "run_verify.ps1",
+            ROOT / "scripts" / "run_verify.sh",
+            ROOT / "tests" / "test_public_contracts.do",
+            ROOT / "tests" / "test_run_verify.sh",
             ROOT / "tests" / "test_value_mappings.do",
+            ROOT / "tests" / "validate_no_data_workflow.py",
             ROOT / "tests" / "validate_source_contracts.py",
             ROOT / "validation" / "README.md",
             ROOT / "validation" / "data_sources.csv",
@@ -819,7 +841,7 @@ def main() -> None:
             ROOT / "validation" / "value_mappings.csv",
         ]
     )
-    print("Public NRH-004 source and value-mapping contracts validated.")
+    print("Public source, mapping, and verification contracts validated.")
 
 
 if __name__ == "__main__":
