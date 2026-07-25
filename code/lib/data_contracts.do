@@ -1,4 +1,4 @@
-* Public source-contract validator for NRH-SCI-Vent.
+* Public source-contract version 2 validator for NRH-SCI-Vent.
 *
 * The validator emits only aggregate invalid counts. It never lists source
 * values, identifiers, row numbers, or input paths.
@@ -257,7 +257,7 @@ program define nrh_validate_source_contract, rclass
         file close `nrh_contract_log'
         return scalar failed_rules = `nrh_structural_failures'
         return scalar warning_rules = 0
-        return scalar contract_version = 1
+        return scalar contract_version = 2
         di as err "The source CSV failed structural contract validation."
         exit 459
     }
@@ -300,7 +300,7 @@ program define nrh_validate_source_contract, rclass
             tempvar nrh_normalized
             quietly generate strL `nrh_normalized' = ///
                 ustrupper(ustrtrim(ustrnormalize(`nrh_field', "nfc")))
-            quietly count if !missing(`nrh_field') & ///
+            quietly count if !missing(`nrh_normalized') & ///
                 strpos(" | `nrh_allowed' | ", " | " + `nrh_normalized' + " | ") == 0
             local nrh_invalid = r(N)
             local nrh_status = cond(`nrh_invalid', ///
@@ -331,7 +331,7 @@ program define nrh_validate_source_contract, rclass
             local nrh_invalid = r(N)
         }
         else if "`nrh_rule_type'" == "parseable_date" {
-            quietly count if !missing(`nrh_field') & ///
+            quietly count if !missing(ustrtrim(`nrh_field')) & ///
                 date(ustrtrim(`nrh_field'), "MD20Y") == .
             local nrh_invalid = r(N)
         }
@@ -360,7 +360,7 @@ program define nrh_validate_source_contract, rclass
                     local nrh_allowed `"`nrh_allowed_`nrh_j''"'
                 }
             }
-            quietly count if !missing(`nrh_field') & ///
+            quietly count if !missing(`nrh_normalized') & ///
                 ((missing(`nrh_numeric') & ///
                 strpos(" | `nrh_allowed' | ", " | " + `nrh_normalized' + " | ") == 0) | ///
                 (!missing(`nrh_numeric') & ///
@@ -382,7 +382,7 @@ program define nrh_validate_source_contract, rclass
     file close `nrh_contract_log'
     return scalar failed_rules = `nrh_content_failures'
     return scalar warning_rules = `nrh_warnings'
-    return scalar contract_version = 1
+    return scalar contract_version = 2
 
     if `nrh_content_failures' {
         di as err "The source CSV failed content contract validation."

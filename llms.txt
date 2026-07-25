@@ -14,12 +14,16 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - Author response DOI: https://doi.org/10.1177/19433654261450544
 
 ## What is in this repository
-- `run_all.do`: canonical smoke/full/release orchestration, fail-fast dependency/input/source-contract staging, output-presence checks, and value-free run evidence.
+- `run_all.do`: canonical smoke/full/release orchestration, fail-fast dependency/input/source-contract staging, mapping-aware preprocessing, output-presence checks, and value-free run evidence.
 - `config/`: shared defaults plus smoke and release profile configuration.
 - `code/00_preflight.do`: offline SHA-256 and controlled-ado resolution gate
   that runs before any source-data check.
-- `code/lib/data_contracts.do`: ordered 36-field storage, missingness, domain,
-  date, identifier, and timing validation with aggregate-only private logs.
+- `code/lib/data_contracts.do`: source-contract version 2 enforcement for the
+  ordered 36-field storage, missingness, domain, date, identifier, and timing
+  rules with aggregate-only private logs.
+- `code/lib/value_mappings.do`: deterministic executor for mapping-contract
+  version 1 at `validation/value_mappings.csv`; unlisted categorical input
+  fails rather than being guessed.
 - `scripts/`: POSIX and PowerShell smoke launchers plus a Stata status adapter.
 - `vendor/stata/`: exact seven-file runtime closure, dependency manifest, and
   third-party license notices.
@@ -27,10 +31,13 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - `NRH SCI Cohort Paper Analysis.do`: produces the paper tables, figures, proportional-odds models, Fine-Gray competing-risk models, and Kaplan-Meier outputs.
 - `NRH SCI Cohort Supplemental Sensitivity Analyses.do`: produces the supplemental figures and correspondence table used in the published author response.
 - `README.md`: human-readable project overview, run instructions, article links, and paper-code mapping.
+- `DECISIONS.md`: public record of the eight approved NRH-004 scientific and
+  data-governance decisions using role/date/opaque-artifact metadata only.
 - `CITATION.cff`: software and preferred article citation metadata.
 - `data_dictionary.md` and `data_dictionary.csv`: public documentation of expected restricted inputs, derived analysis variables, outputs, and review flags.
 - `AGENTS.md`: repository-specific instructions for future coding agents.
-- `PROJECT.yml` and `validation/`: authorized-baseline metadata and public value-free baseline and source contracts.
+- `PROJECT.yml` and `validation/`: authorized-baseline metadata and public
+  value-free baseline, source, and mapping contracts.
 - `vendor/stata/manifest.csv`: exact package versions, sources, licenses,
   controlled paths, and SHA-256 hashes.
 
@@ -53,9 +60,13 @@ scripts/run_smoke.sh
 - Dependency preflight prepends `vendor/stata/plus/`, discards cached
   user-written programs, verifies all seven files, and fails before input
   access on any mismatch or uncontrolled resolution.
-- All canonical profiles enforce the source contract in strict mode before
-  preprocessing. Development warning mode is available only by direct
+- All canonical profiles enforce source-contract version 2 in strict mode
+  before preprocessing. Development warning mode is available only by direct
   validator invocation and structural drift always fails.
+- Preprocessing executes mapping-contract version 1, using normalized
+  allowlisted literals, explicit missing actions, stable target codes and
+  labels, and reject-unlisted behavior. Composite variables are derived
+  directly from mapped numeric codes with missing-value guards.
 - Full and release dependency resolution is offline. Executable analysis code
   must not install or update packages at runtime.
 
@@ -76,9 +87,15 @@ The smoke launchers translate Stata's return code into the process status, inclu
 
 ## Agent cautions
 - Preserve the legacy analysis logic unless a future task explicitly asks for scientific refactoring.
+- Preserve the eight approved NRH-004 decisions, including Male sex with female
+  reference, C1-C8 and AIS A-D domains, field-specific missing actions, and
+  `nrh_admin_censor_date_iso` = 2023-09-30. A censor-date change
+  requires a new signed decision and full baseline review.
 - Preserve the exact vendored dependency closure and manifest hashes unless a
   reviewed dependency ticket explicitly authorizes a change.
 - Never substitute unapproved synthetic data or route a restricted profile to the public fixture.
 - Link to the open-access SAGE article and PubMed record; do not mirror full article text in the repository.
-- Keep README, `llms.txt`, `CITATION.cff`, `AGENTS.md`, and data dictionary metadata synchronized after article, release, or workflow changes.
+- Keep README, `llms.txt`, `CITATION.cff`, `AGENTS.md`, `DECISIONS.md`, mapping
+  contracts, and data dictionary metadata synchronized after article, release,
+  decision, or workflow changes.
 - Run `git diff --check`, parse `CITATION.cff`, and search for hard-coded local paths before publishing changes.

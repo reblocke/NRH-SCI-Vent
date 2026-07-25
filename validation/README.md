@@ -1,11 +1,13 @@
 # Public validation contracts
 
 This directory contains the public, value-free contracts for the approved
-NRH-000 behavioral baseline and the approved NRH-003 source schema. The private
-baseline has been populated, validated, and approved by the scientific owner.
-The source contract was approved by the data steward on 2026-07-24. Public
-contracts expose only sanitized metadata, approval state, approver role,
-approval date, and opaque secure-artifact IDs.
+NRH-000 behavioral baseline, the approved source schema, and the approved
+NRH-004 clinical mappings. The private baseline has been populated, validated,
+and approved by the scientific owner. Source-contract version 1 was approved by
+the data steward on 2026-07-24. Source-contract version 2 and mapping-contract
+version 1 were approved by the scientific owner and data steward on 2026-07-25.
+Public approval metadata expose only roles, dates, and opaque secure-artifact
+IDs; restricted values and paths remain outside Git.
 
 ## Public and private artifacts
 
@@ -17,9 +19,12 @@ approval date, and opaque secure-artifact IDs.
 | Source metadata | `validation/data_sources.csv` | Public | Value-free format, classification, version, and approval metadata |
 | Ordered source schema | `validation/source_schema.csv` | Public | Sanitized field/type/domain contract without source values or counts |
 | Source validation rules | `validation/validation_rules.csv` | Public | Aggregate-only rule definitions and strict/development actions |
+| Clinical decision record | `DECISIONS.md` | Public | Eight approved decisions plus role/date/opaque-artifact metadata |
+| Value-mapping contract | `validation/value_mappings.csv` | Public | Normalized accepted literals, missing actions, stable target codes and labels, decision IDs, and reject-unlisted policy |
 | Baseline audit | `docs/BASELINE_AUDIT.md` | Public | Scope, limitations, and value-free signoff metadata |
 | Approved baseline bundle | Institutionally approved storage outside Git | Private | Populated contracts, run record, logs, outputs, and permitted hashes |
 | Source-contract review packet | Institutionally approved storage outside Git | Private | Raw-header/category review, aggregate counts, source checksum, validation log, and integrity manifest |
+| NRH-004 decision packet | Institutionally approved storage outside Git | Private | Decision evidence, impact review, approval record, and integrity manifest |
 
 `validation/private/` is ignored as defense in depth. It is not a substitute
 for approved secure storage.
@@ -175,18 +180,55 @@ identifier, row number, source path, checksum, or row count. The public
 top-level orchestration log and manifest record only the contract version and
 stage return code.
 
-The data steward approved the private packet referenced by the opaque
-secure-artifact ID in `PROJECT.yml` and `validation/data_sources.csv` on
-2026-07-24. That packet contains the raw-header mapping, raw-to-normalized
-category inventory, aggregate missing/distinct counts, permitted source
-checksum, authorized-source validation log, and integrity manifest. Approval
-covers the ordered schema, lexical domains, sensitivity classes, missingness
-rules, and aggregate-only disclosure format. It does not resolve or endorse
-clinical mappings reserved for NRH-004.
+The data steward approved source-contract version 1 through the private packet
+referenced by the opaque NRH-003 secure-artifact ID in `PROJECT.yml` and
+`validation/data_sources.csv` on 2026-07-24. That approval covered the ordered
+schema, lexical domains, sensitivity classes, missingness rules, and
+aggregate-only disclosure format; it did not itself endorse clinical mappings.
+NRH-004 separately approved the source-domain extensions and clinical mappings
+described below.
+
+## NRH-004 clinical mappings
+
+`validation/value_mappings.csv`, version 1, is the executable public allowlist
+for the approved categorical mappings. `code/lib/value_mappings.do` applies
+Unicode NFC normalization, surrounding-whitespace trimming, and uppercasing
+before matching. Each contract row identifies the source field, normalized
+literal or blank input, target variable, action, code, label, decision ID, and
+reject-unlisted policy. Preprocessing derives composites directly from the
+mapped numeric codes with explicit missing-value guards.
+
+The contract implements:
+
+- age at inpatient rehabilitation admission;
+- Male sex coded 0 = Female and 1 = Male, with female as the reference;
+- the exact chest-tube negative, affirmative, missing, and reject actions;
+- C1–C8 numeric coding with C1–C4 High and C5–C8 Low;
+- the prospective C1–C8 by AIS A–D domain, including the approved AIA A and
+  CENTRAL CORD normalizations;
+- field-specific binary mappings with documented narrative exceptions;
+- a prior-to-rehabilitation definition for `partial_wean_at_admit`; and
+- the scientific-owner-controlled 2023-09-30 administrative censor date,
+  exposed as `nrh_admin_censor_date_iso`.
+
+Unexpected, conflicting, or otherwise unlisted categorical input fails rather
+than being guessed. Approved blank input becomes missing; documented unknown
+literals become missing only where explicitly allowlisted for the field. The
+mapping helper may emit only safe aggregate diagnostics. Those diagnostics
+remain private and may contain sanitized target-variable names, status, and
+aggregate counts, but never identifiers, row numbers, source paths, or input
+literals.
+
+The scientific owner and data steward approved the eight decisions on
+2026-07-25. Public metadata use the opaque secure-artifact ID
+`NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61`; the private packet location,
+contents, counts, and integrity hashes are not public.
 
 ## Approval boundary
 
-NRH-000 baseline approval and NRH-003 source-contract approval are distinct.
-Neither approves clinical coding, model specification, censoring, or other
-unresolved scientific decisions. Any result-changing difference or unresolved
-scientific decision remains a blocker for later tickets.
+NRH-000 baseline approval, NRH-003 source-contract approval, and NRH-004
+clinical-mapping approval are distinct. NRH-004 approves only the eight
+decisions in `DECISIONS.md` and their versioned implementation contracts. It
+does not authorize a release, tag, or merge through a change in a baseline
+value or output meaning. Any such difference remains subject to the separate
+value-free scientific-impact gate and release-line confirmation.

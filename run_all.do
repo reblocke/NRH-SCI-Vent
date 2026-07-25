@@ -31,9 +31,11 @@ foreach required_file in ///
     "config/release.do" ///
     "code/00_preflight.do" ///
     "code/lib/data_contracts.do" ///
+    "code/lib/value_mappings.do" ///
     "vendor/stata/manifest.csv" ///
     "validation/expected_results_schema.csv" ///
     "validation/source_schema.csv" ///
+    "validation/value_mappings.csv" ///
     "validation/validation_rules.csv" {
     capture confirm file "`required_file'"
     if _rc {
