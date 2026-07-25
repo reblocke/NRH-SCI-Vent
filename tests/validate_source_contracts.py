@@ -623,6 +623,7 @@ def validate_preprocessing(
         "replace level_and_completeness = 1 if high_vs_low == 1 & comp_vs_part == 2",
         "replace level_and_completeness = 2 if high_vs_low == 2 & comp_vs_part == 1",
         "replace level_and_completeness = 3 if high_vs_low == 2 & comp_vs_part == 2",
+        "drop `nrh_discharge_normalized'",
         'local nrh_admin_censor_date_iso "2023-09-30"',
         'daily("`nrh_admin_censor_date_iso\'", "YMD")',
     )

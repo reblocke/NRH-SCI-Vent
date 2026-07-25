@@ -287,6 +287,7 @@ label define discharge_label ///
     1 "LTAC" 2 "SNF" 3 "Home w/ Home Health" 4 "Home", replace
 label values discharge_to discharge_label
 label variable discharge_to "Discharge Location?"
+drop `nrh_discharge_normalized'
 drop dischargelocation
 
 generate byte home_vs_facility = .
