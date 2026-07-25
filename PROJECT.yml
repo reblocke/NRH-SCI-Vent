@@ -84,7 +84,7 @@ dependencies:
 
 source_contract:
   version: 1
-  status: pending_data_steward_approval
+  status: approved
   allowed_status_transitions:
     - pending_data_steward_approval -> approved
   public_category_domains: sanitized normalized literals
@@ -103,6 +103,6 @@ source_contract:
   validator: code/lib/data_contracts.do
   tests: tests/test_source_contract.do
   approval:
-    approved_at: ""
-    approver_role: ""
+    approved_at: "2026-07-24"
+    approver_role: "data steward"
     secure_artifact_id: NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f
