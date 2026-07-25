@@ -3,6 +3,7 @@
 version 18
 clear
 set more off
+global NRH_DEPENDENCY_MANIFEST_SHA256 ""
 
 args profile data_dir output_root run_id
 
@@ -28,6 +29,8 @@ foreach required_file in ///
     "config/smoke.do" ///
     "config/full.do" ///
     "config/release.do" ///
+    "code/00_preflight.do" ///
+    "vendor/stata/manifest.csv" ///
     "validation/expected_results_schema.csv" {
     capture confirm file "`required_file'"
     if _rc {
@@ -133,6 +136,8 @@ capture erase "`results_dir'/.nrh-write-test"
 
 local nrh_overall_rc 0
 local nrh_failed_stage ""
+local nrh_dependency_preflight_rc .
+local nrh_dependency_manifest_sha256 ""
 local nrh_preflight_rc .
 local nrh_preprocessing_rc .
 local nrh_cleaned_validation_rc .
@@ -161,7 +166,29 @@ di as txt "Profile: `profile'"
 di as txt "Run ID: `run_id'"
 di as txt "Started: `nrh_started'"
 
-* Stage 1: profile and input preflight.
+* Stage 1: verify the controlled Stata environment before any data access.
+if `nrh_overall_rc' == 0 {
+    capture noisily do "code/00_preflight.do" ///
+        "`log_dir'/dependency_preflight.log"
+    local nrh_dependency_preflight_rc = _rc
+    local nrh_dependency_manifest_sha256 "$NRH_DEPENDENCY_MANIFEST_SHA256"
+    di as txt "NRH_STAGE dependency_preflight rc=`nrh_dependency_preflight_rc'"
+    capture file open `nrh_toplog' using "`master_log'", write text append
+    if _rc {
+        local nrh_toplog_rc = _rc
+    }
+    else {
+        file write `nrh_toplog' ///
+            "stage.dependency_preflight.rc=`nrh_dependency_preflight_rc'" _n
+        file close `nrh_toplog'
+    }
+    if `nrh_dependency_preflight_rc' {
+        local nrh_overall_rc `nrh_dependency_preflight_rc'
+        local nrh_failed_stage "dependency_preflight"
+    }
+}
+
+* Stage 2: profile and input preflight.
 if `nrh_overall_rc' == 0 {
     local nrh_preflight_rc 0
 
@@ -203,7 +230,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 2: unchanged preprocessing body through the legacy entry point.
+* Stage 3: unchanged preprocessing body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Preprocessing.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
@@ -224,7 +251,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 3: sentinel cleaned-file validation. NRH-003/006 add full contracts.
+* Stage 4: sentinel cleaned-file validation. NRH-003/006 add full contracts.
 if `nrh_overall_rc' == 0 {
     capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
     local nrh_cleaned_validation_rc = _rc
@@ -243,7 +270,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 4: unchanged paper-analysis body through the legacy entry point.
+* Stage 5: unchanged paper-analysis body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
     capture noisily do "NRH SCI Cohort Paper Analysis.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
@@ -264,15 +291,12 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 5: unchanged supplemental-analysis body through the legacy entry point.
+* Stage 6: unchanged supplemental-analysis body through the legacy entry point.
 if `nrh_overall_rc' == 0 {
-    local nrh_plus_before "`c(sysdir_plus)'"
     capture noisily do "NRH SCI Cohort Supplemental Sensitivity Analyses.do" ///
         "`data_dir'" "`output_root'" "`run_id'"
     local nrh_supplemental_rc = _rc
     capture log close
-    quietly sysdir set PLUS "`nrh_plus_before'"
-    capture adopath - "`c(tmpdir)'codex_oparallel_plus"
     di as txt "NRH_STAGE supplemental rc=`nrh_supplemental_rc'"
     capture file open `nrh_toplog' using "`master_log'", write text append
     if _rc {
@@ -288,7 +312,7 @@ if `nrh_overall_rc' == 0 {
     }
 }
 
-* Stage 6: check the output-presence rows in the public value-free contract.
+* Stage 7: check the output-presence rows in the public value-free contract.
 if `nrh_overall_rc' == 0 {
     local nrh_output_check_rc 0
     capture noisily import delimited using "`nrh_expected_results_contract'", ///
@@ -342,7 +366,7 @@ if `nrh_toplog_rc' & `nrh_overall_rc' == 0 {
     local nrh_failed_stage "top_log"
 }
 
-* Stage 7: always attempt a value-free runtime manifest after run creation.
+* Stage 8: always attempt a value-free runtime manifest after run creation.
 local nrh_completed "`c(current_date)' `c(current_time)'"
 tempname nrh_manifest
 capture file open `nrh_manifest' using "`manifest_file'", write text replace
@@ -359,6 +383,11 @@ if `nrh_manifest_rc' == 0 {
     file write `nrh_manifest' "stata_edition,`c(edition_real)'" _n
     file write `nrh_manifest' "stata_build_date,`c(born_date)'" _n
     file write `nrh_manifest' "operating_system,`c(os)'" _n
+    file write `nrh_manifest' ///
+        "dependency_manifest_sha256,`nrh_dependency_manifest_sha256'" _n
+    file write `nrh_manifest' "dependency_vendor_path,vendor/stata/plus" _n
+    file write `nrh_manifest' ///
+        "dependency_preflight_rc,`nrh_dependency_preflight_rc'" _n
     file write `nrh_manifest' "preflight_rc,`nrh_preflight_rc'" _n
     file write `nrh_manifest' "preprocessing_rc,`nrh_preprocessing_rc'" _n
     file write `nrh_manifest' "cleaned_validation_rc,`nrh_cleaned_validation_rc'" _n
@@ -386,4 +415,5 @@ if !_rc {
     file close `nrh_toplog'
 }
 
+capture macro drop NRH_DEPENDENCY_MANIFEST_SHA256
 exit `nrh_overall_rc'

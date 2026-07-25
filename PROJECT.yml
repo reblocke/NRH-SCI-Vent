@@ -73,3 +73,11 @@ privacy:
     - real-data logs
     - generated real-data tables or figures
     - source paths that expose user or institutional details
+
+dependencies:
+  stata:
+    manifest_version: 1
+    manifest_path: vendor/stata/manifest.csv
+    vendor_path: vendor/stata/plus
+    preflight_path: code/00_preflight.do
+    runtime_network_installation: false

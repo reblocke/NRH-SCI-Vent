@@ -12,13 +12,6 @@ args data_dir output_root run_id
 if "`data_dir'" == "" local data_dir "Data"
 if "`output_root'" == "" local output_root "Results and Figures"
 
-capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
-if _rc {
-    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
-    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
-    exit 601
-}
-
 if "`run_id'" == "" local results_dir "`output_root'/$S_DATE"
 else local results_dir "`output_root'/`run_id'"
 local log_dir "`results_dir'/Logs"
@@ -26,6 +19,15 @@ local log_dir "`results_dir'/Logs"
 capture mkdir "`output_root'"
 capture mkdir "`results_dir'"
 capture mkdir "`log_dir'"
+
+do "code/00_preflight.do" "`log_dir'/supplemental_dependency_preflight.log"
+
+capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
+if _rc {
+    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
+    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
+    exit 601
+}
 
 log using "`log_dir'/supplemental_sensitivity_analyses.log", replace text
 
@@ -709,31 +711,6 @@ di as txt "Analytic cohort N: " _N
 tab weaning_outcome, missing
 di as txt "No credible baseline comorbidity/frailty marker was available; pneumonia variables were treated as respiratory proxies and were not modeled."
 
-* Reuse the temporary PLUS cache so proportional-odds diagnostics can run
-* without changing the user's persistent ado tree.
-local plus_orig "`c(sysdir_plus)'"
-local plus_tmp "`c(tmpdir)'codex_oparallel_plus"
-capture mkdir "`plus_tmp'"
-quietly sysdir set PLUS "`plus_tmp'"
-adopath ++ "`plus_tmp'"
-
-capture which oparallel
-if _rc {
-    di as txt "Installing oparallel into temporary PLUS directory: `plus_tmp'"
-    capture noisily ssc install oparallel, replace
-    if _rc {
-        quietly sysdir set PLUS "`plus_orig'"
-        di as err "Failed to install oparallel into temporary PLUS directory."
-        exit 111
-    }
-}
-capture which oparallel
-if _rc {
-    quietly sysdir set PLUS "`plus_orig'"
-    di as err "oparallel not found after installation attempt."
-    exit 111
-}
-
 ologit discharge_to c.age_decade i.comp_vs_part i.high_vs_low ib1.weaning_outcome
 estimates store full_cohort_milestone_model
 local age_or_full = exp(_b[age_decade])
@@ -829,7 +806,6 @@ if `p_injury_group' < 0.05 local injury_phrase_group "grouped injury level was a
 else local injury_phrase_group "grouped injury-level terms were imprecise overall"
 di as txt "Exploratory interpretation: `age_phrase_group' after replacing the high-vs-low dichotomy with four injury groups (age OR per decade older = `age_or_group_fmt'); `injury_phrase_group', and the C7-C8 estimate should be interpreted cautiously because N=`n_c78'."
 
-quietly sysdir set PLUS "`plus_orig'"
 restore
 
 * Exploratory decannulated-subgroup ordered-logit models: age is the only
@@ -855,36 +831,10 @@ label define discharge_to_decann_lab 1 "SNF" 2 "Home w/ Home Health" 3 "Home", r
 label values discharge_to_decann discharge_to_decann_lab
 tab discharge_to_decann, missing
 
-* Use a temporary PLUS directory so package installation for diagnostics does
-* not modify the user's persistent Stata setup.
-local plus_orig "`c(sysdir_plus)'"
-local plus_tmp "`c(tmpdir)'codex_oparallel_plus"
-capture mkdir "`plus_tmp'"
-quietly sysdir set PLUS "`plus_tmp'"
-adopath ++ "`plus_tmp'"
-
-capture which oparallel
-if _rc {
-    di as txt "Installing oparallel into temporary PLUS directory: `plus_tmp'"
-    capture noisily ssc install oparallel, replace
-    if _rc {
-        quietly sysdir set PLUS "`plus_orig'"
-        di as err "Failed to install oparallel into temporary PLUS directory."
-        exit 111
-    }
-}
-capture which oparallel
-if _rc {
-    quietly sysdir set PLUS "`plus_orig'"
-    di as err "oparallel not found after installation attempt."
-    exit 111
-}
-
 di as txt "Primary model: ordered logit of discharge category on age per decade."
 ologit discharge_to_decann c.age_decade, or
 capture noisily oparallel
 if _rc {
-    quietly sysdir set PLUS "`plus_orig'"
     di as err "oparallel failed after the age-per-decade model."
     exit 111
 }
@@ -893,14 +843,12 @@ di as txt "Sensitivity model: ordered logit of discharge category on age per yea
 ologit discharge_to_decann c.age, or
 capture noisily oparallel
 if _rc {
-    quietly sysdir set PLUS "`plus_orig'"
     di as err "oparallel failed after the age-per-year model."
     exit 111
 }
 
 di as txt "Exploratory interpretation: within the decannulated subgroup, age was not a clear predictor of discharge category, and proportional-odds diagnostics did not detect a violation, although power is limited."
 
-quietly sysdir set PLUS "`plus_orig'"
 restore
 
 di as txt "Supplemental figure generation completed."
