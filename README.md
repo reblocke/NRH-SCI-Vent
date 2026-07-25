@@ -27,7 +27,9 @@ Article authors: Casey Fenger; Brian W. Locke ([ORCID](https://orcid.org/0000-00
 
 ## Quick start
 
-> **Requirements**: Stata 18 with graph export support for PNG/TIFF; ability to read/write to your working directory.
+> **Requirements**: Stata 18 with graph export support for PNG/TIFF; ability
+> to read/write to your working directory; and a local SHA-256 utility
+> (`shasum` on macOS, `sha256sum` on Linux, or `certutil` on Windows).
 
 1) **Clone** this repository and move into it:
 ```sh
@@ -58,7 +60,7 @@ stata-mp -b do run_all.do full "/approved/data" "/approved/output"
 stata-mp -b do run_all.do release "/approved/data" "/approved/output" "2026-07-24T120000_release"
 ```
 
-The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if preflight or any analysis stage fails. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
+The runner must start from the repository root. It creates one unique, non-overwritable `<output_root>/<run_id>/` directory and fails fast if dependency preflight, input preflight, or any analysis stage fails. Dependency preflight runs before the source-file check. Once directory and writability setup succeeds, the run contains a value-free `run_all.log` and `run_manifest.csv`; detailed child logs and generated outputs appear only for stages that execute. Use the generated run ID or another opaque, non-sensitive identifier; never encode a patient, source extract, or restricted location in `run_id`. Early invocation errors that occur before a safe run directory can be created—such as an invalid profile, wrong working directory, unsafe run ID, duplicate run ID, or unwritable output root—return a Stata error but do not create a manifest. The smoke launchers translate that Stata return code into a nonzero process status, including on macOS Stata builds that otherwise return process status zero.
 
 The POSIX launcher defaults to `-e` on macOS and `-b` on other Unix-like systems; the PowerShell launcher defaults to `/e` for Windows Stata. Set `STATA_BIN` for a different executable and `STATA_BATCH_FLAG` to override the platform default. For example, with the macOS app binary:
 
@@ -75,6 +77,35 @@ stata-mp -b do "NRH SCI Cohort Paper Analysis.do"
 stata-mp -b do "NRH SCI Cohort Supplemental Sensitivity Analyses.do"
 ```
 
+### Locked Stata dependencies
+
+The project carries the exact seven-file runtime closure used by the authorized
+baseline under `vendor/stata/plus/`. `code/00_preflight.do` puts that directory
+first on Stata's ado-path, clears any cached user-written programs, verifies
+every file against `vendor/stata/manifest.csv` with SHA-256, and confirms that
+the required commands and graph schemes resolve to the controlled copies.
+Canonical and standalone analysis runs perform this check before opening an
+analysis dataset.
+
+No analysis script installs packages or requires network access. Full and
+release runs are therefore dependency-offline once the repository is cloned.
+If the SHA-256 utility is unavailable, a file is missing or modified, or a
+command resolves outside `vendor/stata/plus/`, preflight exits nonzero before
+the source-data check. The dependency manifest hash and preflight status are
+recorded in `run_manifest.csv`; detailed value-free evidence is written to
+`Logs/dependency_preflight.log`.
+
+The locked packages and citation sources are:
+
+- Mark Chatfield's [`table1_mc`](https://ideas.repec.org/c/boc/bocode/s458351.html), version 3.3.
+- Ben Jann's [`coefplot`](https://github.com/benjann/coefplot/tree/fe6c883881fbda70e506e6ae89a3921d7f220926), version 1.8.6 at the locked commit.
+- Cameron Campbell's [`stackedcount`](https://ideas.repec.org/c/boc/bocode/s458825.html), version 1.0.
+- Asjad Naqvi's [`schemepack`](https://github.com/asjadnaqvi/stata-schemepack/tree/962ca13accdc8a87aa3cfcda522ba81143c0a31f), version 1.4 at the locked commit.
+- Maarten L. Buis's [`oparallel`](https://ideas.repec.org/c/boc/bocode/s457720.html), version 1.0.9, including its `gologit3_lf2` evaluator.
+
+See [`vendor/stata/LICENSES.md`](./vendor/stata/LICENSES.md) for file-level
+provenance and third-party license notices.
+
 ### Expected outputs
 The analysis script exports (filenames may be updated as wording evolves):
 - `Fig 2 - stacked_states.tiff` — stacked daily counts of weaning & discharge status.
@@ -83,7 +114,7 @@ The analysis script exports (filenames may be updated as wording evolves):
 - `Figure 4 - KMs for death.tiff` — KM curves by discharge location and weaning milestone.
 - Supplemental tables in `xlsx` under `Results and Figures/<run_id>/`.
 - Orchestration evidence at `Results and Figures/<run_id>/run_all.log` and `run_manifest.csv`.
-- Detailed script logs under `Results and Figures/<run_id>/Logs/`.
+- Dependency-preflight and detailed script logs under `Results and Figures/<run_id>/Logs/`.
 
 (Figure 1 was generated separately)
 
@@ -119,8 +150,10 @@ The response analyses require the same restricted dataset as the paper analyses.
 ├── CITATION.cff                          # Software and preferred article citation metadata
 ├── AGENTS.md                             # Repository-specific guidance for coding agents
 ├── run_all.do                            # Canonical smoke/full/release orchestration entry point
+├── code/00_preflight.do                  # Offline dependency resolution and SHA-256 gate
 ├── config/                               # Profile defaults and overrides
 ├── scripts/                              # Cross-platform smoke launchers
+├── vendor/stata/                         # Locked runtime ado files, manifest, and licenses
 ├── validation/                           # Public value-free validation contracts
 ├── data_dictionary.md / data_dictionary.csv
 │                                          # Public variable, file, and output documentation
@@ -134,10 +167,11 @@ The response analyses require the same restricted dataset as the paper analyses.
 ```
 
 ## Workflow
-1. `run_all.do` — validates the profile, paths, unique run ID, and required input; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
-2. `NRH SCI Cohort Preprocessing.do` — reads `Working NRH SCI.csv` from the configured data directory, constructs analysis variables, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
-3. `NRH SCI Cohort Paper Analysis.do` — reads `nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
-4. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — reads `nrh-sci-cleaned.dta`, generates the supplemental figures, correspondence table, and model log used to support the published author response.
+1. `run_all.do` — validates the profile, paths, and unique run ID; runs dependency preflight before input preflight; invokes each legacy stage; checks cleaned-data and output presence; and finalizes the value-free run evidence.
+2. `code/00_preflight.do` — prepends the locked ado tree, verifies every manifest SHA-256, and confirms controlled command and scheme resolution without network access.
+3. `NRH SCI Cohort Preprocessing.do` — reads `Working NRH SCI.csv` from the configured data directory, constructs analysis variables, and writes `nrh-sci-raw.dta` and `nrh-sci-cleaned.dta` beside the private input.
+4. `NRH SCI Cohort Paper Analysis.do` — reads `nrh-sci-cleaned.dta`, fits proportional‑odds and Fine–Gray models, generates figures/tables, and exports publication graphics (TIFF).
+5. `NRH SCI Cohort Supplemental Sensitivity Analyses.do` — reads `nrh-sci-cleaned.dta`, generates the supplemental figures, correspondence table, and model log used to support the published author response.
 
 ## Machine-readable metadata
 - [`llms.txt`](./llms.txt) summarizes the repository purpose, article identifiers, run order, data restrictions, and agent cautions.
@@ -166,7 +200,8 @@ Release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
 - **Desirability convention**: For regression results, OR/SHR **> 1** indicate more independence / less resource‑intensive disposition / higher cumulative probability of achieving the milestone.
 
 ## Environment
-- Tested with **Stata 18**. The workflow uses built-in Stata survival, regression, and graphics commands, plus existing user-written commands used by the legacy analysis workflow, including `table1_mc`, `coefplot`, and `stackedcount`.
+- Tested with **Stata 18**. The workflow uses built-in Stata survival, regression, and graphics commands plus the exact project-controlled dependencies recorded in `vendor/stata/manifest.csv`.
+- Dependency verification is offline and fail-closed. It uses the operating system's local SHA-256 utility but never downloads or updates a package at runtime.
 - The launchers and orchestration paths are cross-platform. The current supplemental TIFF fallback still uses macOS command-line tools (`sips`, `grep`, and `touch`), so full end-to-end portability is not yet claimed.
 - Hardware: standard laptop/desktop is sufficient (no GPU required). Runs complete in minutes on a typical workstation.
 
@@ -176,7 +211,13 @@ This work was supported by **NIH** Ruth L. Kirschstein NRSA **5T32HL105321** (B.
 **Conflicts**: B.W.L. reports equity in Mountain Biometrics, Inc. (unrelated to this study). J.P.B. reports consulting fees from Breas Medical and Baxter. Others report no conflicts.
 
 ## License
-Code is released under the **MIT License** (see `LICENSE`). The final SAGE article is open access under **CC BY 4.0** on the article page. Restricted source data, private generated datasets, local logs, and generated output folders are not included in this repository.
+NRH-SCI-Vent project code is released under the **MIT License** (see
+`LICENSE`). Third-party files under `vendor/stata/plus/` retain their
+GPL-3.0-only or MIT licenses as documented in
+[`vendor/stata/LICENSES.md`](./vendor/stata/LICENSES.md). The final SAGE article
+is open access under **CC BY 4.0** on the article page. Restricted source data,
+private generated datasets, local logs, and generated output folders are not
+included in this repository.
 
 ## Contributing, conduct & security
 We welcome fixes to documentation, clarity of variable definitions, and portability improvements. Please **do not** submit PHI/PII or any data files via issues or PRs. See:

@@ -29,7 +29,7 @@ Thanks for your interest in improving this research code! We welcome contributio
    ```sh
    scripts/run_smoke.sh
    ```
-   NRH-005 has not yet supplied the approved public fixture, so the expected NRH-001 result is a clear nonzero missing-fixture status, not an end-to-end smoke pass. Never substitute an ad hoc synthetic or restricted dataset for this check.
+   NRH-005 has not yet supplied the approved public fixture, so the expected result is a passing dependency preflight followed by a clear nonzero missing-fixture status, not an end-to-end smoke pass. Never substitute an ad hoc synthetic or restricted dataset for this check.
 
 ## Style and structure
 

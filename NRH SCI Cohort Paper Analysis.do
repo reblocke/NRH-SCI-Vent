@@ -9,13 +9,6 @@ args data_dir output_root run_id
 if "`data_dir'" == "" local data_dir "Data"
 if "`output_root'" == "" local output_root "Results and Figures"
 
-capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
-if _rc {
-    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
-    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
-    exit 601
-}
-
 if "`run_id'" == "" local results_dir "`output_root'/$S_DATE"
 else local results_dir "`output_root'/`run_id'"
 local log_dir "`results_dir'/Logs"
@@ -23,6 +16,15 @@ local log_dir "`results_dir'/Logs"
 capture mkdir "`output_root'"
 capture mkdir "`results_dir'" //make new folder for figure output if needed
 capture mkdir "`log_dir'" //new folder for stata logs
+
+do "code/00_preflight.do" "`log_dir'/paper_dependency_preflight.log"
+
+capture confirm file "`data_dir'/nrh-sci-cleaned.dta"
+if _rc {
+    di as err "Could not find `data_dir'/nrh-sci-cleaned.dta."
+    di as err "Run NRH SCI Cohort Preprocessing.do first or pass the data directory as the first argument."
+    exit 601
+}
 
 * Data Analysis
 
