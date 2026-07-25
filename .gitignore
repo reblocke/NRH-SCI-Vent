@@ -31,6 +31,7 @@ Results and Figures/
 !validation/sample_flow_schema.csv
 !validation/source_schema.csv
 !validation/validation_rules.csv
+!validation/value_mappings.csv
 !vendor/stata/manifest.csv
 
 # Private authorized-baseline values and evidence

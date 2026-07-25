@@ -2,6 +2,16 @@
 
 All notable public documentation and release metadata changes for this repository are recorded here.
 
+## Unreleased
+
+- Recorded the eight NRH-004 clinical-mapping and administrative-censoring decisions approved by the scientific owner and data steward on 2026-07-25, using public role/date/opaque-artifact metadata only.
+- Advanced the strict source contract to version 2 for C8 and the prospective C1–C8 by AIS A–D domain.
+- Added mapping-contract version 1 with deterministic source-to-code mappings, explicit missing actions, documented narrative exceptions, and reject-unlisted behavior.
+- Replaced order-dependent categorical encoding in preprocessing with approved explicit mappings and direct numeric derivations while retaining stable target codes and labels.
+- Named the scientific-owner-controlled 2023-09-30 administrative censoring constant and added structural and synthetic mapping validation.
+- Updated the public data dictionaries and workflow documentation. No restricted data, populated aggregates, or real-data outputs are included.
+- Preserved the paper and supplemental analysis scripts, dependency closure, `CITATION.cff`, release tags, and latest-release metadata. No release or tag is created by these unreleased changes.
+
 ## v0.2.0 - paper and author-response code
 
 Release date: 2026-05-30

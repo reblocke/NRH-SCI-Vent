@@ -35,6 +35,7 @@ baseline:
       path: validation/sample_flow_schema.csv
   public_audit: docs/BASELINE_AUDIT.md
 
+# Frozen NRH-000 authoritative baseline hashes; not current-worktree hashes.
 analysis_files:
   - path: NRH SCI Cohort Preprocessing.do
     sha256: d220ae6ab659760d7def73010ee985a14e6e2a65ad00c9c9ab309d81a0001a42
@@ -83,7 +84,7 @@ dependencies:
     runtime_network_installation: false
 
 source_contract:
-  version: 1
+  version: 2
   status: approved
   allowed_status_transitions:
     - pending_data_steward_approval -> approved
@@ -103,6 +104,70 @@ source_contract:
   validator: code/lib/data_contracts.do
   tests: tests/test_source_contract.do
   approval:
-    approved_at: "2026-07-24"
-    approver_role: "data steward"
-    secure_artifact_id: NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f
+    approved_at: "2026-07-25"
+    approver_roles:
+      - scientific owner
+      - data steward
+    secure_artifact_id: NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61
+    approved_decisions:
+      - NRH004-D001
+      - NRH004-D002
+      - NRH004-D003
+      - NRH004-D004
+      - NRH004-D005
+      - NRH004-D006
+      - NRH004-D007
+  approval_history:
+    - version: 1
+      approved_at: "2026-07-24"
+      approver_roles:
+        - data steward
+      secure_artifact_id: NRH003-4fe498dd-ac82-47fd-8677-5a28815a953f
+    - version: 2
+      approved_at: "2026-07-25"
+      approver_roles:
+        - scientific owner
+        - data steward
+      secure_artifact_id: NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61
+
+value_mapping_contract:
+  version: 1
+  status: approved
+  path: validation/value_mappings.csv
+  normalization: Unicode NFC, trim surrounding whitespace, uppercase
+  permitted_input_kinds:
+    - literal
+    - blank
+  permitted_actions:
+    - assign
+    - set_missing
+  unlisted_action: reject
+  validator: code/lib/value_mappings.do
+  tests:
+    - tests/test_value_mappings.do
+    - tests/validate_source_contracts.py
+  approval:
+    approved_at: "2026-07-25"
+    approver_roles:
+      - scientific owner
+      - data steward
+    secure_artifact_id: NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61
+    decision_record: DECISIONS.md
+    approved_decisions:
+      - NRH004-D002
+      - NRH004-D003
+      - NRH004-D004
+      - NRH004-D005
+      - NRH004-D006
+      - NRH004-D007
+
+scientific_constants:
+  nrh_admin_censor_date_iso:
+    value: "2023-09-30"
+    decision_id: NRH004-D008
+    approved_at: "2026-07-25"
+    approver_roles:
+      - scientific owner
+      - data steward
+    secure_artifact_id: NRH004-37fdea65-5a0b-414c-8a5b-d9356b044e61
+    change_policy: Any change requires a new signed decision and full baseline review.

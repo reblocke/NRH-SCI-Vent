@@ -1,4 +1,4 @@
-* Synthetic-only tests for the NRH-003 source contract.
+* Synthetic-only tests for the NRH-004 source contract version 2.
 
 version 18
 clear
@@ -21,6 +21,7 @@ program define nrh_test_write_fixture
     generate str8 sex = "M"
     generate str16 dateofinjury = "01/01/2020"
     generate str8 injurylevelreportedpriortorehab = "C4"
+    replace injurylevelreportedpriortorehab = "C8" in 2
     generate str8 ribfracturesyorn = "N"
     generate str8 pneumothoraxyorn = "N"
     generate str40 chesttubeyorn = "N"
@@ -35,6 +36,7 @@ program define nrh_test_write_fixture
     generate str20 admitfrom = "TEST"
     generate byte daysfrominjurytoadmissiontorehab = 5
     generate str40 asiaclassificationatrehab = "C4 AIS A"
+    replace asiaclassificationatrehab = "C8 AIS D" in 2
     generate str40 weanoffventduringthedayandcontin = "N"
     generate str40 ifyestopreviousquestionhowmanyda = "1"
     replace ifyestopreviousquestionhowmanyda = "PRIOR TO REHAB" in 2
@@ -80,6 +82,11 @@ program define nrh_test_write_fixture
     else if "`variant'" == "negative_timing" {
         replace daystodischargefromrehab = -1 in 2
     }
+    else if "`variant'" == "whitespace_blank" {
+        replace sex = "   " in 2
+        replace dateofinjury = "   " in 2
+        replace ifyestopreviousquestionhowmanyda = "   " in 2
+    }
     else if inlist("`variant'", "unknown_category", "sentinel") {
         replace sex = "NRH_SENTINEL_SECRET" in 2
     }
@@ -99,7 +106,16 @@ nrh_validate_source_contract using "`nrh_source'", ///
     mode("strict") log("`nrh_log'")
 assert r(failed_rules) == 0
 assert r(warning_rules) == 0
-assert r(contract_version) == 1
+assert r(contract_version) == 2
+
+* Surrounding-whitespace normalization makes whitespace-only strings blank.
+nrh_test_write_fixture using "`nrh_source'", variant("whitespace_blank")
+nrh_validate_source_contract using "`nrh_source'", ///
+    schema("validation/source_schema.csv") ///
+    rules("validation/validation_rules.csv") ///
+    mode("strict") log("`nrh_log'")
+assert r(failed_rules) == 0
+assert r(warning_rules) == 0
 
 * Structural failures remain fatal in both modes.
 foreach nrh_variant in reordered missing_field extra_field wrong_type {

@@ -1,0 +1,180 @@
+mapping_id,source_field,input_kind,normalized_literal,target_variable,action,target_code,target_label,decision_id,unlisted_action,notes
+NRH004-SEX-F,sex,literal,F,sex,assign,0,Female,NRH004-D002,reject,Cleaned variable label is Male sex.
+NRH004-SEX-M,sex,literal,M,sex,assign,1,Male,NRH004-D002,reject,Cleaned variable label is Male sex.
+NRH004-SEX-MALE,sex,literal,MALE,sex,assign,1,Male,NRH004-D002,reject,Cleaned variable label is Male sex.
+NRH004-SEX-BLANK,sex,blank,,sex,set_missing,,,NRH004-D002,reject,Blank maps to missing.
+NRH004-CHEST-N,chesttubeyorn,literal,N,chest_tube,assign,0,N,NRH004-D003,reject,
+NRH004-CHEST-Y,chesttubeyorn,literal,Y,chest_tube,assign,1,Y,NRH004-D003,reject,
+NRH004-CHEST-AFTER,chesttubeyorn,literal,Y. AFTER INTUBATION,chest_tube,assign,1,Y,NRH004-D003,reject,Approved narrative affirmative.
+NRH004-CHEST-EFFUSION,chesttubeyorn,literal,Y. AFTER INTUBATION. PLEURAL EFFUSION,chest_tube,assign,1,Y,NRH004-D003,reject,Approved narrative affirmative.
+NRH004-CHEST-BLANK,chesttubeyorn,blank,,chest_tube,set_missing,,,NRH004-D003,reject,Blank maps to missing.
+NRH004-INIT-C1,injurylevelreportedpriortorehab,literal,C1,init_injury_level,assign,1,C1,NRH004-D004,reject,
+NRH004-INIT-C2,injurylevelreportedpriortorehab,literal,C2,init_injury_level,assign,2,C2,NRH004-D004,reject,
+NRH004-INIT-C3,injurylevelreportedpriortorehab,literal,C3,init_injury_level,assign,3,C3,NRH004-D004,reject,
+NRH004-INIT-C4,injurylevelreportedpriortorehab,literal,C4,init_injury_level,assign,4,C4,NRH004-D004,reject,
+NRH004-INIT-C5,injurylevelreportedpriortorehab,literal,C5,init_injury_level,assign,5,C5,NRH004-D004,reject,
+NRH004-INIT-C6,injurylevelreportedpriortorehab,literal,C6,init_injury_level,assign,6,C6,NRH004-D004,reject,
+NRH004-INIT-C7,injurylevelreportedpriortorehab,literal,C7,init_injury_level,assign,7,C7,NRH004-D004,reject,
+NRH004-INIT-C8,injurylevelreportedpriortorehab,literal,C8,init_injury_level,assign,8,C8,NRH004-D004,reject,
+NRH004-INIT-BLANK,injurylevelreportedpriortorehab,blank,,init_injury_level,set_missing,,,NRH004-D004,reject,Blank maps to missing.
+NRH004-ASIA-L-C1-A,asiaclassificationatrehab,literal,C1 AIS A,level,assign,1,C1,NRH004-D004,reject,
+NRH004-ASIA-L-C1-B,asiaclassificationatrehab,literal,C1 AIS B,level,assign,1,C1,NRH004-D004,reject,
+NRH004-ASIA-L-C1-C,asiaclassificationatrehab,literal,C1 AIS C,level,assign,1,C1,NRH004-D004,reject,
+NRH004-ASIA-L-C1-D,asiaclassificationatrehab,literal,C1 AIS D,level,assign,1,C1,NRH004-D004,reject,
+NRH004-ASIA-L-C1-AIAA,asiaclassificationatrehab,literal,C1 AIA A,level,assign,1,C1,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C1-CC,asiaclassificationatrehab,literal,C1 CENTRAL CORD,level,assign,1,C1,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C1-A,asiaclassificationatrehab,literal,C1 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C1-B,asiaclassificationatrehab,literal,C1 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C1-C,asiaclassificationatrehab,literal,C1 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C1-D,asiaclassificationatrehab,literal,C1 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C1-AIAA,asiaclassificationatrehab,literal,C1 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C1-CC,asiaclassificationatrehab,literal,C1 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C2-A,asiaclassificationatrehab,literal,C2 AIS A,level,assign,2,C2,NRH004-D004,reject,
+NRH004-ASIA-L-C2-B,asiaclassificationatrehab,literal,C2 AIS B,level,assign,2,C2,NRH004-D004,reject,
+NRH004-ASIA-L-C2-C,asiaclassificationatrehab,literal,C2 AIS C,level,assign,2,C2,NRH004-D004,reject,
+NRH004-ASIA-L-C2-D,asiaclassificationatrehab,literal,C2 AIS D,level,assign,2,C2,NRH004-D004,reject,
+NRH004-ASIA-L-C2-AIAA,asiaclassificationatrehab,literal,C2 AIA A,level,assign,2,C2,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C2-CC,asiaclassificationatrehab,literal,C2 CENTRAL CORD,level,assign,2,C2,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C2-A,asiaclassificationatrehab,literal,C2 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C2-B,asiaclassificationatrehab,literal,C2 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C2-C,asiaclassificationatrehab,literal,C2 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C2-D,asiaclassificationatrehab,literal,C2 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C2-AIAA,asiaclassificationatrehab,literal,C2 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C2-CC,asiaclassificationatrehab,literal,C2 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C3-A,asiaclassificationatrehab,literal,C3 AIS A,level,assign,3,C3,NRH004-D004,reject,
+NRH004-ASIA-L-C3-B,asiaclassificationatrehab,literal,C3 AIS B,level,assign,3,C3,NRH004-D004,reject,
+NRH004-ASIA-L-C3-C,asiaclassificationatrehab,literal,C3 AIS C,level,assign,3,C3,NRH004-D004,reject,
+NRH004-ASIA-L-C3-D,asiaclassificationatrehab,literal,C3 AIS D,level,assign,3,C3,NRH004-D004,reject,
+NRH004-ASIA-L-C3-AIAA,asiaclassificationatrehab,literal,C3 AIA A,level,assign,3,C3,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C3-CC,asiaclassificationatrehab,literal,C3 CENTRAL CORD,level,assign,3,C3,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C3-A,asiaclassificationatrehab,literal,C3 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C3-B,asiaclassificationatrehab,literal,C3 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C3-C,asiaclassificationatrehab,literal,C3 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C3-D,asiaclassificationatrehab,literal,C3 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C3-AIAA,asiaclassificationatrehab,literal,C3 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C3-CC,asiaclassificationatrehab,literal,C3 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C4-A,asiaclassificationatrehab,literal,C4 AIS A,level,assign,4,C4,NRH004-D004,reject,
+NRH004-ASIA-L-C4-B,asiaclassificationatrehab,literal,C4 AIS B,level,assign,4,C4,NRH004-D004,reject,
+NRH004-ASIA-L-C4-C,asiaclassificationatrehab,literal,C4 AIS C,level,assign,4,C4,NRH004-D004,reject,
+NRH004-ASIA-L-C4-D,asiaclassificationatrehab,literal,C4 AIS D,level,assign,4,C4,NRH004-D004,reject,
+NRH004-ASIA-L-C4-AIAA,asiaclassificationatrehab,literal,C4 AIA A,level,assign,4,C4,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C4-CC,asiaclassificationatrehab,literal,C4 CENTRAL CORD,level,assign,4,C4,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C4-A,asiaclassificationatrehab,literal,C4 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C4-B,asiaclassificationatrehab,literal,C4 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C4-C,asiaclassificationatrehab,literal,C4 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C4-D,asiaclassificationatrehab,literal,C4 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C4-AIAA,asiaclassificationatrehab,literal,C4 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C4-CC,asiaclassificationatrehab,literal,C4 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C5-A,asiaclassificationatrehab,literal,C5 AIS A,level,assign,5,C5,NRH004-D004,reject,
+NRH004-ASIA-L-C5-B,asiaclassificationatrehab,literal,C5 AIS B,level,assign,5,C5,NRH004-D004,reject,
+NRH004-ASIA-L-C5-C,asiaclassificationatrehab,literal,C5 AIS C,level,assign,5,C5,NRH004-D004,reject,
+NRH004-ASIA-L-C5-D,asiaclassificationatrehab,literal,C5 AIS D,level,assign,5,C5,NRH004-D004,reject,
+NRH004-ASIA-L-C5-AIAA,asiaclassificationatrehab,literal,C5 AIA A,level,assign,5,C5,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C5-CC,asiaclassificationatrehab,literal,C5 CENTRAL CORD,level,assign,5,C5,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C5-A,asiaclassificationatrehab,literal,C5 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C5-B,asiaclassificationatrehab,literal,C5 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C5-C,asiaclassificationatrehab,literal,C5 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C5-D,asiaclassificationatrehab,literal,C5 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C5-AIAA,asiaclassificationatrehab,literal,C5 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C5-CC,asiaclassificationatrehab,literal,C5 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C6-A,asiaclassificationatrehab,literal,C6 AIS A,level,assign,6,C6,NRH004-D004,reject,
+NRH004-ASIA-L-C6-B,asiaclassificationatrehab,literal,C6 AIS B,level,assign,6,C6,NRH004-D004,reject,
+NRH004-ASIA-L-C6-C,asiaclassificationatrehab,literal,C6 AIS C,level,assign,6,C6,NRH004-D004,reject,
+NRH004-ASIA-L-C6-D,asiaclassificationatrehab,literal,C6 AIS D,level,assign,6,C6,NRH004-D004,reject,
+NRH004-ASIA-L-C6-AIAA,asiaclassificationatrehab,literal,C6 AIA A,level,assign,6,C6,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C6-CC,asiaclassificationatrehab,literal,C6 CENTRAL CORD,level,assign,6,C6,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C6-A,asiaclassificationatrehab,literal,C6 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C6-B,asiaclassificationatrehab,literal,C6 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C6-C,asiaclassificationatrehab,literal,C6 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C6-D,asiaclassificationatrehab,literal,C6 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C6-AIAA,asiaclassificationatrehab,literal,C6 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C6-CC,asiaclassificationatrehab,literal,C6 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C7-A,asiaclassificationatrehab,literal,C7 AIS A,level,assign,7,C7,NRH004-D004,reject,
+NRH004-ASIA-L-C7-B,asiaclassificationatrehab,literal,C7 AIS B,level,assign,7,C7,NRH004-D004,reject,
+NRH004-ASIA-L-C7-C,asiaclassificationatrehab,literal,C7 AIS C,level,assign,7,C7,NRH004-D004,reject,
+NRH004-ASIA-L-C7-D,asiaclassificationatrehab,literal,C7 AIS D,level,assign,7,C7,NRH004-D004,reject,
+NRH004-ASIA-L-C7-AIAA,asiaclassificationatrehab,literal,C7 AIA A,level,assign,7,C7,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C7-CC,asiaclassificationatrehab,literal,C7 CENTRAL CORD,level,assign,7,C7,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C7-A,asiaclassificationatrehab,literal,C7 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C7-B,asiaclassificationatrehab,literal,C7 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C7-C,asiaclassificationatrehab,literal,C7 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C7-D,asiaclassificationatrehab,literal,C7 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C7-AIAA,asiaclassificationatrehab,literal,C7 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C7-CC,asiaclassificationatrehab,literal,C7 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-C8-A,asiaclassificationatrehab,literal,C8 AIS A,level,assign,8,C8,NRH004-D004,reject,
+NRH004-ASIA-L-C8-B,asiaclassificationatrehab,literal,C8 AIS B,level,assign,8,C8,NRH004-D004,reject,
+NRH004-ASIA-L-C8-C,asiaclassificationatrehab,literal,C8 AIS C,level,assign,8,C8,NRH004-D004,reject,
+NRH004-ASIA-L-C8-D,asiaclassificationatrehab,literal,C8 AIS D,level,assign,8,C8,NRH004-D004,reject,
+NRH004-ASIA-L-C8-AIAA,asiaclassificationatrehab,literal,C8 AIA A,level,assign,8,C8,NRH004-D004,reject,AIA A is the approved AIS A alias.
+NRH004-ASIA-L-C8-CC,asiaclassificationatrehab,literal,C8 CENTRAL CORD,level,assign,8,C8,NRH004-D004,reject,CENTRAL CORD is the approved AIS D alias.
+NRH004-ASIA-G-C8-A,asiaclassificationatrehab,literal,C8 AIS A,asia_class,assign,1,AIS A,NRH004-D005,reject,
+NRH004-ASIA-G-C8-B,asiaclassificationatrehab,literal,C8 AIS B,asia_class,assign,2,AIS B,NRH004-D005,reject,
+NRH004-ASIA-G-C8-C,asiaclassificationatrehab,literal,C8 AIS C,asia_class,assign,3,AIS C,NRH004-D005,reject,
+NRH004-ASIA-G-C8-D,asiaclassificationatrehab,literal,C8 AIS D,asia_class,assign,4,AIS D,NRH004-D005,reject,
+NRH004-ASIA-G-C8-AIAA,asiaclassificationatrehab,literal,C8 AIA A,asia_class,assign,1,AIS A,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-G-C8-CC,asiaclassificationatrehab,literal,C8 CENTRAL CORD,asia_class,assign,4,AIS D,NRH004-D005,reject,Approved alias.
+NRH004-ASIA-L-BLANK,asiaclassificationatrehab,blank,,level,set_missing,,,NRH004-D004,reject,Blank maps to missing.
+NRH004-ASIA-G-BLANK,asiaclassificationatrehab,blank,,asia_class,set_missing,,,NRH004-D005,reject,Blank maps to missing.
+NRH004-DEATH-N,deceased,literal,N,death,assign,0,N,NRH004-D006,reject,
+NRH004-DEATH-Y,deceased,literal,Y,death,assign,1,Y,NRH004-D006,reject,
+NRH004-DEATH-BLANK,deceased,blank,,death,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-RIB-N,ribfracturesyorn,literal,N,rib_fx,assign,0,N,NRH004-D006,reject,
+NRH004-RIB-Y,ribfracturesyorn,literal,Y,rib_fx,assign,1,Y,NRH004-D006,reject,
+NRH004-RIB-BLANK,ribfracturesyorn,blank,,rib_fx,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PTX-N,pneumothoraxyorn,literal,N,ptx,assign,0,N,NRH004-D006,reject,
+NRH004-PTX-Y,pneumothoraxyorn,literal,Y,ptx,assign,1,Y,NRH004-D006,reject,
+NRH004-PTX-BLANK,pneumothoraxyorn,blank,,ptx,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PRETRACH-N,attempttoweanpriortotrachyorn,literal,N,wean_pre_trach,assign,0,N,NRH004-D006,reject,
+NRH004-PRETRACH-NO,attempttoweanpriortotrachyorn,literal,NO,wean_pre_trach,assign,0,N,NRH004-D006,reject,
+NRH004-PRETRACH-Y,attempttoweanpriortotrachyorn,literal,Y,wean_pre_trach,assign,1,Y,NRH004-D006,reject,
+NRH004-PRETRACH-NARRATIVE,attempttoweanpriortotrachyorn,literal,Y - EXTUBATED ON 8/20  BUT PT STRIDORED AND C.A.,wean_pre_trach,assign,1,Y,NRH004-D006,reject,Approved narrative affirmative.
+NRH004-PRETRACH-UNKNOWN,attempttoweanpriortotrachyorn,literal,UNKNOWN,wean_pre_trach,set_missing,,,NRH004-D006,reject,Documented unknown maps to missing.
+NRH004-PRETRACH-BLANK,attempttoweanpriortotrachyorn,blank,,wean_pre_trach,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PRETRANS-N,attempttoweanoffventpriortotrans,literal,N,wean_pre_trans,assign,0,N,NRH004-D006,reject,
+NRH004-PRETRANS-Y,attempttoweanoffventpriortotrans,literal,Y,wean_pre_trans,assign,1,Y,NRH004-D006,reject,
+NRH004-PRETRANS-NARRATIVE,attempttoweanoffventpriortotrans,literal,Y (ABLE TO WEANE TO VENT AT NIGHT),wean_pre_trans,assign,1,Y,NRH004-D006,reject,Approved narrative affirmative.
+NRH004-PRETRANS-UNKNOWN,attempttoweanoffventpriortotrans,literal,UNKNOWN,wean_pre_trans,set_missing,,,NRH004-D006,reject,Documented unknown maps to missing.
+NRH004-PRETRANS-UNKOWN,attempttoweanoffventpriortotrans,literal,UNKOWN,wean_pre_trans,set_missing,,,NRH004-D006,reject,Documented spelling variant maps to missing.
+NRH004-PRETRANS-BLANK,attempttoweanoffventpriortotrans,blank,,wean_pre_trans,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PNAPRIOR-N,didpatientdeveloppneumoniapriort,literal,N,pneumonia_prior,assign,0,N,NRH004-D006,reject,
+NRH004-PNAPRIOR-Y,didpatientdeveloppneumoniapriort,literal,Y,pneumonia_prior,assign,1,Y,NRH004-D006,reject,
+NRH004-PNAPRIOR-YES,didpatientdeveloppneumoniapriort,literal,YES,pneumonia_prior,assign,1,Y,NRH004-D006,reject,
+NRH004-PNAPRIOR-BLANK,didpatientdeveloppneumoniapriort,blank,,pneumonia_prior,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-OSH-N,osh,literal,N,outside_hospital,assign,0,N,NRH004-D006,reject,
+NRH004-OSH-Y,osh,literal,Y,outside_hospital,assign,1,Y,NRH004-D006,reject,
+NRH004-OSH-BLANK,osh,blank,,outside_hospital,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-WEAN24-N,weanoffventforfull24hoursyorn,literal,N,wean_24hr,assign,0,N,NRH004-D006,reject,
+NRH004-WEAN24-BIPAP,weanoffventforfull24hoursyorn,literal,N - BIPAP AT NIGHT,wean_24hr,assign,0,N,NRH004-D006,reject,Approved narrative negative.
+NRH004-WEAN24-Y,weanoffventforfull24hoursyorn,literal,Y,wean_24hr,assign,1,Y,NRH004-D006,reject,
+NRH004-WEAN24-BLANK,weanoffventforfull24hoursyorn,blank,,wean_24hr,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-DECANN-N,didpatientdecanulateyorn,literal,N,decannulate,assign,0,N,NRH004-D006,reject,
+NRH004-DECANN-NDOT,didpatientdecanulateyorn,literal,N.,decannulate,assign,0,N,NRH004-D006,reject,Approved punctuation variant.
+NRH004-DECANN-Y,didpatientdecanulateyorn,literal,Y,decannulate,assign,1,Y,NRH004-D006,reject,
+NRH004-DECANN-BLANK,didpatientdecanulateyorn,blank,,decannulate,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-ICU-N,didtheytransfertoicufromrehabyor,literal,N,rehab_to_icu,assign,0,N,NRH004-D006,reject,
+NRH004-ICU-Y,didtheytransfertoicufromrehabyor,literal,Y,rehab_to_icu,assign,1,Y,NRH004-D006,reject,
+NRH004-ICU-SICU,didtheytransfertoicufromrehabyor,literal,Y  - SICU,rehab_to_icu,assign,1,Y,NRH004-D006,reject,Approved narrative affirmative with significant internal spacing.
+NRH004-ICU-BLANK,didtheytransfertoicufromrehabyor,blank,,rehab_to_icu,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-RESP-N,iftheytransferredtoicuwascausere,literal,N,resp_icu_transfer,assign,0,N,NRH004-D006,reject,
+NRH004-RESP-PACER,iftheytransferredtoicuwascausere,literal,N (DIAPHRAM PACER PLACEMENT),resp_icu_transfer,assign,0,N,NRH004-D006,reject,Approved narrative negative.
+NRH004-RESP-Y,iftheytransferredtoicuwascausere,literal,Y,resp_icu_transfer,assign,1,Y,NRH004-D006,reject,
+NRH004-RESP-BLANK,iftheytransferredtoicuwascausere,blank,,resp_icu_transfer,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PNAREHAB-N,didtheydeveloppnumoniaatrehabyor,literal,N,pna_at_rehab,assign,0,N,NRH004-D006,reject,
+NRH004-PNAREHAB-Y,didtheydeveloppnumoniaatrehabyor,literal,Y,pna_at_rehab,assign,1,Y,NRH004-D006,reject,
+NRH004-PNAREHAB-BLANK,didtheydeveloppnumoniaatrehabyor,blank,,pna_at_rehab,set_missing,,,NRH004-D006,reject,Blank maps to missing.
+NRH004-PARTIAL-N,weanoffventduringthedayandcontin,literal,N,partial_wean_at_admit,assign,0,N,NRH004-D007,reject,Known non-prior state.
+NRH004-PARTIAL-Y,weanoffventduringthedayandcontin,literal,Y,partial_wean_at_admit,assign,0,N,NRH004-D007,reject,Known non-prior state.
+NRH004-PARTIAL-YDOT,weanoffventduringthedayandcontin,literal,Y.,partial_wean_at_admit,assign,0,N,NRH004-D007,reject,Known non-prior state.
+NRH004-PARTIAL-REHAB,weanoffventduringthedayandcontin,literal,Y (PRIOR TO REHAB),partial_wean_at_admit,assign,1,Y,NRH004-D007,reject,Explicit prior-to-rehabilitation state.
+NRH004-PARTIAL-ADMISSION,weanoffventduringthedayandcontin,literal,Y PRIOR TO ADMISSION,partial_wean_at_admit,assign,1,Y,NRH004-D007,reject,Admission means rehabilitation admission.
+NRH004-PARTIAL-UNKNOWN,weanoffventduringthedayandcontin,literal,UNKNOWN,partial_wean_at_admit,set_missing,,,NRH004-D007,reject,Documented unknown maps to missing.
+NRH004-PARTIAL-UNKOWN,weanoffventduringthedayandcontin,literal,UNKOWN,partial_wean_at_admit,set_missing,,,NRH004-D007,reject,Documented spelling variant maps to missing.
+NRH004-PARTIAL-BLANK,weanoffventduringthedayandcontin,blank,,partial_wean_at_admit,set_missing,,,NRH004-D007,reject,Blank maps to missing.
+NRH004-DAY-N,weanoffventduringthedayandcontin,literal,N,wean_during_day,assign,0,N,NRH004-D006,reject,
+NRH004-DAY-Y,weanoffventduringthedayandcontin,literal,Y,wean_during_day,assign,1,Y,NRH004-D006,reject,
+NRH004-DAY-YDOT,weanoffventduringthedayandcontin,literal,Y.,wean_during_day,assign,1,Y,NRH004-D006,reject,Approved punctuation variant.
+NRH004-DAY-REHAB,weanoffventduringthedayandcontin,literal,Y (PRIOR TO REHAB),wean_during_day,assign,1,Y,NRH004-D006,reject,Explicit prior-to-rehabilitation state.
+NRH004-DAY-ADMISSION,weanoffventduringthedayandcontin,literal,Y PRIOR TO ADMISSION,wean_during_day,assign,1,Y,NRH004-D006,reject,Admission means rehabilitation admission.
+NRH004-DAY-UNKNOWN,weanoffventduringthedayandcontin,literal,UNKNOWN,wean_during_day,set_missing,,,NRH004-D006,reject,Documented unknown maps to missing.
+NRH004-DAY-UNKOWN,weanoffventduringthedayandcontin,literal,UNKOWN,wean_during_day,set_missing,,,NRH004-D006,reject,Documented spelling variant maps to missing.
+NRH004-DAY-BLANK,weanoffventduringthedayandcontin,blank,,wean_during_day,set_missing,,,NRH004-D006,reject,Blank maps to missing.
