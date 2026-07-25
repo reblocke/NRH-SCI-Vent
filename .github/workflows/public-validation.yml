@@ -1,0 +1,31 @@
+name: Public validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  public-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate public contracts
+        run: python3 tests/validate_source_contracts.py
+
+      - name: Validate no-data workflow boundary
+        run: python3 tests/validate_no_data_workflow.py
+
+      - name: Check launcher syntax and status handling
+        run: |
+          sh -n scripts/run_verify.sh scripts/run_smoke.sh
+          sh -n tests/fake_stata.sh tests/test_run_verify.sh
+          tests/test_run_verify.sh

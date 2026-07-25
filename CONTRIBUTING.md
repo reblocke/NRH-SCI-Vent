@@ -14,7 +14,7 @@ Thanks for your interest in improving this research code! We welcome contributio
 - Documentation: clarifying comments, variable definitions, or updating README tables.
 - Portability: making paths and globals configurable; enabling non-interactive batch runs.
 - Reproducibility: pinning Stata version-dependent behaviors; improving figure export steps.
-- Lightweight tests: smoke tests that can run on a synthetic dataset to ensure scripts execute without error.
+- Lightweight tests: data-free contract, dependency, launcher, and privacy checks.
 
 ## Development setup
 
@@ -25,11 +25,11 @@ Thanks for your interest in improving this research code! We welcome contributio
    cd NRH-SCI-Vent
    git checkout -b feature/<short-name>
    ```
-3. Run the canonical public smoke command:
+3. Run canonical no-data public verification:
    ```sh
-   scripts/run_smoke.sh
+   scripts/run_verify.sh
    ```
-   NRH-005 has not yet supplied the approved public fixture, so the expected result is a passing dependency preflight followed by a clear nonzero missing-fixture status, not an end-to-end smoke pass. Never substitute an ad hoc synthetic or restricted dataset for this check.
+   This command does not accept a data directory or run preprocessing or analyses. The public smoke profile is retired because no synthetic cohort is authorized. Never add fabricated patient- or cohort-shaped records, or substitute restricted data, to make public verification appear end to end.
 
 ## Style and structure
 
