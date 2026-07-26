@@ -21,12 +21,14 @@ real-data output belongs in this document.
 
 | Role | Version or ref | Commit |
 |---|---|---|
-| Authoritative development baseline | `origin/main` | `6ba1caf49ac9e260723d850b2a9f189f83255258` |
+| Ref observed at audit time | `origin/main` | `6ba1caf49ac9e260723d850b2a9f189f83255258` |
+| Immutable NRH-000 baseline anchor | commit | `6ba1caf49ac9e260723d850b2a9f189f83255258` |
 | Latest frozen release | `v0.2.0` | `45a50136bf6b0279b2a1cf34a51c559109596c0a` |
 
-The development baseline is identified as `0.3.0-dev`. `CITATION.cff`
-continues to describe the latest frozen release, `v0.2.0`; NRH-000 does not
-create or modify a release.
+The immutable NRH-000 comparison anchor is the recorded commit, not the moving
+`origin/main` ref. At audit time, the development line was identified as
+`0.3.0-dev`. `CITATION.cff` continues to describe the latest frozen release,
+`v0.2.0`; NRH-000 does not create or modify a release.
 
 ## Audited analysis files
 
@@ -60,10 +62,13 @@ public contract.
 
 ## Known limitations frozen for comparison
 
-The baseline records current behavior; it does not endorse or resolve these
-limitations:
+At frozen baseline commit
+`6ba1caf49ac9e260723d850b2a9f189f83255258`, the audited workflow had the
+following limitations. This historical list does not describe current `main`
+and does not endorse the underlying behavior:
 
-- no public synthetic end-to-end execution path or automated Stata tests;
+- no public synthetic end-to-end execution path and no automated Stata tests
+  at that commit;
 - unpinned user-written ado dependencies and runtime installation behavior;
 - positional source import without an exact public schema contract;
 - unresolved clinical and categorical mappings documented as needing review;
@@ -71,13 +76,15 @@ limitations:
 - unseeded random jitter in supplemental figures;
 - macOS/POSIX-specific supplemental image post-processing;
 - hard-coded Kaplan-Meier p-value annotation text;
-- date-based output directories that can overwrite same-day results; and
-- incomplete output determinism and claim-level traceability.
+- date-based output directories that can overwrite same-day results;
+- incomplete output determinism and claim-level traceability; and
 - a sentinel baseline that does not yet structure every table cell or plotted
   aggregate as an independent claim-regression result.
 
-These limitations are work for later tickets. They must not be silently fixed
-inside NRH-000 because doing so would invalidate the pre-refactor baseline.
+Later reviewed changes have resolved some of these historical limitations while
+preserving the immutable comparison anchor. Remaining limitations must not be
+silently changed inside NRH-000 because doing so would invalidate the
+pre-refactor baseline.
 
 ## Completion gate
 

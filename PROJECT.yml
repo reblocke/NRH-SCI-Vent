@@ -14,8 +14,9 @@ latest_release:
   citation_metadata: CITATION.cff
 
 baseline:
-  authoritative_ref: origin/main
+  ref_at_audit: origin/main
   authoritative_commit: 6ba1caf49ac9e260723d850b2a9f189f83255258
+  anchor_policy: The authoritative commit is immutable; ref_at_audit records the historical ref and may advance independently.
   audited_date: "2026-07-21"
   status: approved
   allowed_status_transitions:
