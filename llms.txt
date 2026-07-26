@@ -12,10 +12,12 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - Paper and author-response code release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
 - Original manuscript snapshot release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0
 - Author response DOI: https://doi.org/10.1177/19433654261450544
+- Development branch: `main` is the unreleased `0.3.0-dev` line; `v0.2.0`
+  remains the latest citable code release.
 
 ## What is in this repository
 - `run_all.do`: canonical verify/full/release orchestration, with explicitly no-data public verification and fail-fast restricted analysis staging.
-- `config/`: shared defaults plus verify and release profile configuration.
+- `config/`: shared defaults plus verify, full, and release profile configuration.
 - `code/00_preflight.do`: offline SHA-256 and controlled-ado resolution gate
   that runs before any source-data check.
 - `code/lib/data_contracts.do`: source-contract version 2 enforcement for the
@@ -61,9 +63,11 @@ scripts/run_verify.sh
 - Dependency preflight prepends `vendor/stata/plus/`, discards cached
   user-written programs, verifies all seven files, and fails before input
   access on any mismatch or uncontrolled resolution.
-- All canonical profiles enforce source-contract version 2 in strict mode
-  before preprocessing. Development warning mode is available only by direct
-  validator invocation and structural drift always fails.
+- The data-consuming `full` and `release` profiles enforce source-contract
+  version 2 in strict mode before preprocessing; standalone preprocessing does
+  the same. `verify` does not accept source data or invoke source validation.
+  Development warning mode is available only by direct validator invocation,
+  and structural drift always fails.
 - Preprocessing executes mapping-contract version 1, using normalized
   allowlisted literals, explicit missing actions, stable target codes and
   labels, and reject-unlisted behavior. Composite variables are derived

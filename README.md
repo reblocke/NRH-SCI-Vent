@@ -3,9 +3,15 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1177%2F19433654261428406-blue)](https://doi.org/10.1177/19433654261428406)
 [![PubMed](https://img.shields.io/badge/PMID-41823210-green)](https://pubmed.ncbi.nlm.nih.gov/41823210/)
 [![Release](https://img.shields.io/github/v/release/reblocke/NRH-SCI-Vent?label=code%20release)](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
+[![Public validation](https://github.com/reblocke/NRH-SCI-Vent/actions/workflows/public-validation.yml/badge.svg?branch=main)](https://github.com/reblocke/NRH-SCI-Vent/actions/workflows/public-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 > Code to reproduce the analyses and figures for ventilator-weaning outcomes in adults with **cervical spinal cord injury (CSCI)** during inpatient rehabilitation at the University of Utah Craig H. Neilsen Rehabilitation Hospital.
+
+> **Development status:** `main` is the unreleased `0.3.0-dev` line.
+> [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
+> remains the latest citable code release; use a tagged release when exact
+> reproducibility is required.
 
 **Links & IDs**
 - Repository: https://github.com/reblocke/NRH-SCI-Vent
