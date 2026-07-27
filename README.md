@@ -2,20 +2,21 @@
 
 [![DOI](https://img.shields.io/badge/DOI-10.1177%2F19433654261428406-blue)](https://doi.org/10.1177/19433654261428406)
 [![PubMed](https://img.shields.io/badge/PMID-41823210-green)](https://pubmed.ncbi.nlm.nih.gov/41823210/)
-[![Release](https://img.shields.io/github/v/release/reblocke/NRH-SCI-Vent?label=code%20release)](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
+[![Release](https://img.shields.io/github/v/release/reblocke/NRH-SCI-Vent?label=code%20release)](https://github.com/reblocke/NRH-SCI-Vent/releases/latest)
 [![Public validation](https://github.com/reblocke/NRH-SCI-Vent/actions/workflows/public-validation.yml/badge.svg?branch=main)](https://github.com/reblocke/NRH-SCI-Vent/actions/workflows/public-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 > Code to reproduce the analyses and figures for ventilator-weaning outcomes in adults with **cervical spinal cord injury (CSCI)** during inpatient rehabilitation at the University of Utah Craig H. Neilsen Rehabilitation Hospital.
 
-> **Development status:** `main` is the unreleased `0.3.0-dev` line.
+> **Current release:** [`v0.3.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0)
+> is the reproducibility-hardened NRH-000 through NRH-005 line.
 > [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
-> remains the latest citable code release; use a tagged release when exact
-> reproducibility is required.
+> remains the exact final-paper and author-response code snapshot.
 
 **Links & IDs**
 - Repository: https://github.com/reblocke/NRH-SCI-Vent
-- Paper and author-response code release: [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
+- Current reproducibility-hardened release: [`v0.3.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0)
+- Exact final-paper and author-response code snapshot: [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0)
 - Original manuscript snapshot release: [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0)
 - Latest analysis commit used for the final paper: `b437708ea58aba0f4da0afe73e54f64de423b7d2` (2025‑09‑29)
 - Final article: Fenger C, Locke BW, Barker J, et al. **Post-Acute Ventilator Weaning and Discharge Outcomes in Individuals With Cervical Spinal Cord Injury.** *Respiratory Care*. 2026;71(4):351-357. https://doi.org/10.1177/19433654261428406
@@ -26,7 +27,7 @@
 - Statistical software: **Stata 18** (StataCorp, College Station, TX).
 
 ## Cite this work
-Please cite the final **Respiratory Care** article for the primary paper and cite this repository when referencing the analysis code. GitHub release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) contains the final paper code plus the supplemental analyses used for the author response. The earlier frozen manuscript snapshot remains available as [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0). See [`CITATION.cff`](./CITATION.cff) for citation metadata you can paste into your reference manager.
+Please cite the final **Respiratory Care** article for the primary paper and cite the GitHub release matching the analysis code used. Release [`v0.3.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0) is the current reproducibility-hardened workflow. Release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) remains the exact final-paper and author-response code snapshot, and [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0) remains the original manuscript snapshot. See [`CITATION.cff`](./CITATION.cff) for citation metadata you can paste into your reference manager.
 
 ## Authors and affiliations
 Article authors: Casey Fenger; Brian W. Locke ([ORCID](https://orcid.org/0000-0002-3588-5238)); James Barker; William Tang; Polly Creveling; Stormy Foster-Palmer; Alexandra Flis; Kevin Park; Jeffrey Rosenbluth; Jeanette P. Brown ([ORCID](https://orcid.org/0009-0009-8407-4034)). Primary affiliations include the University of Utah Craig H. Neilsen Rehabilitation Hospital, University of Utah Department of Physical Medicine and Rehabilitation, Spencer Fox Eccles School of Medicine, University of Utah Division of Pulmonary and Critical Care Medicine, and Intermountain Medical Center.
@@ -198,7 +199,7 @@ The response analyses require the same restricted dataset as the paper analyses.
 - [`DECISIONS.md`](./DECISIONS.md) and [`validation/value_mappings.csv`](./validation/value_mappings.csv) provide the public NRH-004 decision record and executable normalized-literal mapping contract.
 
 ## Paper ↔ code mapping
-Release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0) is the original manuscript snapshot. Release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) contains the final paper code and author-response supplemental-analysis code.
+Release [`v0.1.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0) is the original manuscript snapshot. Release [`v0.2.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0) contains the exact final-paper and author-response code. Release [`v0.3.0`](https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0) is the reproducibility-hardened successor with approved source and mapping contracts, locked dependencies, canonical orchestration, and no-data public verification. Secure comparison found unchanged cohort flow, model samples, inferential results, and diagnostics; approved mapping labels and Table 1 semantics changed as documented by NRH-004.
 
 | Paper item | Script | Command/section | Output |
 |---|---|---|---|

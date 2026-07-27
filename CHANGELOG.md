@@ -2,18 +2,21 @@
 
 All notable public documentation and release metadata changes for this repository are recorded here.
 
-## Unreleased
+## v0.3.0 — reproducibility and clinical-mapping hardening
 
-- Recorded the eight NRH-004 clinical-mapping and administrative-censoring decisions approved by the scientific owner and data steward on 2026-07-25, using public role/date/opaque-artifact metadata only.
-- Advanced the strict source contract to version 2 for C8 and the prospective C1–C8 by AIS A–D domain.
-- Added mapping-contract version 1 with deterministic source-to-code mappings, explicit missing actions, documented narrative exceptions, and reject-unlisted behavior.
-- Replaced order-dependent categorical encoding in preprocessing with approved explicit mappings and direct numeric derivations while retaining stable target codes and labels.
-- Named the scientific-owner-controlled 2023-09-30 administrative censoring constant and added structural and atomic mapping validation.
-- Updated the public data dictionaries and workflow documentation. No restricted data, populated aggregates, or real-data outputs are included.
-- Preserved the paper and supplemental analysis scripts, dependency closure, `CITATION.cff`, release tags, and latest-release metadata. No release or tag is created by these unreleased changes.
-- Re-scoped NRH-005 from a deferred synthetic-cohort smoke test to explicitly no-data public verification because no fabricated public cohort is authorized.
-- Added the `verify` profile, cross-platform return-code launchers, value-free no-data manifests, structural Stata contract checks, launcher regression tests, and data-free GitHub validation.
-- Retired the `smoke` profile with a clear nonzero migration message. Full and release remain the only data-consuming profiles.
+Release date: 2026-07-27
+
+- Established the approved NRH-000 behavioral comparison baseline using value-free public contracts and an integrity-checked private evidence bundle.
+- Added canonical `verify`, `full`, and `release` orchestration with fail-fast staging, unique non-overwritable run directories, return-code propagation, and value-free run manifests.
+- Locked the Stata dependency environment to the project-controlled offline runtime closure with SHA-256 and license verification.
+- Added the approved strict source contract and advanced it to version 2 for C8 and the prospective C1–C8 by AIS A–D domain.
+- Recorded the eight NRH-004 clinical-mapping and administrative-censoring decisions using public role/date/opaque-artifact metadata only.
+- Added mapping-contract version 1 with deterministic source-to-code mappings, explicit field-specific missing actions, documented narrative exceptions, and reject-unlisted behavior.
+- Replaced order-dependent categorical encoding in preprocessing with approved explicit mappings and guarded numeric derivations, and named the scientific-owner-controlled 2023-09-30 administrative censoring constant.
+- Re-scoped NRH-005 from an unauthorized synthetic cohort to explicitly no-data public verification, with cross-platform launchers, structural and atomic mapping tests, and data-free GitHub validation.
+- Secure release-candidate comparison confirmed unchanged cohort flow, model samples, inferential results, and diagnostics relative to the authorized baseline. Approved mapping labels and Table 1 semantics changed as documented by NRH-004; binary output hashes remain informational.
+- Updated the public data dictionaries and workflow documentation. No restricted data, populated aggregates, real-data logs, or generated real-data outputs are included.
+- Preserved `v0.2.0` as the exact final-paper and author-response code snapshot; `v0.3.0` is its reproducibility-hardened successor.
 
 ## v0.2.0 - paper and author-response code
 

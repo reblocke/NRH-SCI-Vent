@@ -5,12 +5,13 @@ project:
   title: NRH-SCI-Vent
   repository: https://github.com/reblocke/NRH-SCI-Vent
   target_classification: T2 claim-bearing publication analysis with high-risk clinical-data overlay
-  development_version: 0.3.0-dev
+  development_version: 0.3.0
   maintenance_status: active-development
 
 latest_release:
-  version: v0.2.0
-  commit: 45a50136bf6b0279b2a1cf34a51c559109596c0a
+  version: v0.3.0
+  tag: v0.3.0
+  release_date: "2026-07-27"
   citation_metadata: CITATION.cff
 
 baseline:

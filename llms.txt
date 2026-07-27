@@ -9,11 +9,13 @@ Final paper: Fenger C, Locke BW, Barker J, Tang W, Creveling P, Foster-Palmer S,
 - Repository: https://github.com/reblocke/NRH-SCI-Vent
 - Final article DOI: https://doi.org/10.1177/19433654261428406
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/41823210/
-- Paper and author-response code release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
+- Current reproducibility-hardened release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0
+- Exact final-paper and author-response code snapshot: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
 - Original manuscript snapshot release: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.1.0
 - Author response DOI: https://doi.org/10.1177/19433654261450544
-- Development branch: `main` is the unreleased `0.3.0-dev` line; `v0.2.0`
-  remains the latest citable code release.
+- Current release: `v0.3.0` is the reproducibility-hardened NRH-000 through
+  NRH-005 line; `v0.2.0` remains the exact final-paper and author-response
+  code snapshot.
 
 ## What is in this repository
 - `run_all.do`: canonical verify/full/release orchestration, with explicitly no-data public verification and fail-fast restricted analysis staging.
