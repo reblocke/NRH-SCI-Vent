@@ -523,12 +523,36 @@ def top_level_section(text: str, name: str) -> str:
 
 def validate_project() -> None:
     text = (ROOT / "PROJECT.yml").read_text(encoding="utf-8")
+    project = top_level_section(text, "project")
+    assert "  development_version: 0.3.0\n" in project
+
     latest_release = top_level_section(text, "latest_release")
-    assert "  version: v0.2.0\n" in latest_release
+    assert "  version: v0.3.0\n" in latest_release
+    assert "  tag: v0.3.0\n" in latest_release
+    assert '  release_date: "2026-07-27"\n' in latest_release
+    assert "\n  commit:" not in f"\n{latest_release}"
+
+    citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    assert 'version: "v0.3.0"\n' in citation
+    assert 'date-released: "2026-07-27"\n' in citation
     assert (
-        "  commit: 45a50136bf6b0279b2a1cf34a51c559109596c0a\n"
-        in latest_release
+        "value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0"
+        in citation
     )
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    llms = (ROOT / "llms.txt").read_text(encoding="utf-8")
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    baseline_audit = (ROOT / "docs" / "BASELINE_AUDIT.md").read_text(
+        encoding="utf-8"
+    )
+    assert "releases/tag/v0.3.0" in readme
+    assert "releases/tag/v0.3.0" in llms
+    assert "0.3.0-dev" not in readme
+    assert "0.3.0-dev" not in llms
+    assert "## v0.3.0 — reproducibility and clinical-mapping hardening" in changelog
+    assert "Release date: 2026-07-27" in changelog
+    assert "Release observed at audit time" in baseline_audit
 
     baseline = top_level_section(text, "baseline")
     assert (
@@ -812,6 +836,7 @@ def main() -> None:
         [
             ROOT / ".gitignore",
             ROOT / "CHANGELOG.md",
+            ROOT / "CITATION.cff",
             ROOT / "DECISIONS.md",
             ROOT / "NRH SCI Cohort Preprocessing.do",
             ROOT / "PROJECT.yml",
@@ -821,6 +846,7 @@ def main() -> None:
             ROOT / "code" / "lib" / "value_mappings.do",
             ROOT / "data_dictionary.csv",
             ROOT / "data_dictionary.md",
+            ROOT / "docs" / "BASELINE_AUDIT.md",
             ROOT / "llms.txt",
             ROOT / "run_all.do",
             ROOT / "scripts" / "run_smoke.do",

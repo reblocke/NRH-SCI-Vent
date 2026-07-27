@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: >-
   If you use this repository, please cite the final Respiratory Care article
-  and the GitHub release matching the code you used. Release v0.2.0 contains
-  the final paper code and the supplemental analyses used for the published
-  author response.
+  and the GitHub release matching the code you used. Release v0.3.0 is the
+  reproducibility-hardened NRH-000 through NRH-005 line; v0.2.0 remains the
+  exact paper and author-response code snapshot.
 title: NRH-SCI-Vent
 type: software
 authors:
@@ -39,11 +39,11 @@ keywords:
   - rehabilitation
   - Stata
   - clinical research
-version: "v0.2.0"
-date-released: "2026-05-30"
+version: "v0.3.0"
+date-released: "2026-07-27"
 identifiers:
   - type: url
-    value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.2.0
+    value: https://github.com/reblocke/NRH-SCI-Vent/releases/tag/v0.3.0
   - type: url
     value: https://doi.org/10.1177/19433654261428406
   - type: url

@@ -23,12 +23,12 @@ real-data output belongs in this document.
 |---|---|---|
 | Ref observed at audit time | `origin/main` | `6ba1caf49ac9e260723d850b2a9f189f83255258` |
 | Immutable NRH-000 baseline anchor | commit | `6ba1caf49ac9e260723d850b2a9f189f83255258` |
-| Latest frozen release | `v0.2.0` | `45a50136bf6b0279b2a1cf34a51c559109596c0a` |
+| Release observed at audit time | `v0.2.0` | `45a50136bf6b0279b2a1cf34a51c559109596c0a` |
 
 The immutable NRH-000 comparison anchor is the recorded commit, not the moving
 `origin/main` ref. At audit time, the development line was identified as
-`0.3.0-dev`. `CITATION.cff` continues to describe the latest frozen release,
-`v0.2.0`; NRH-000 does not create or modify a release.
+`0.3.0-dev`, and `CITATION.cff` described the then-latest frozen release,
+`v0.2.0`. NRH-000 did not create or modify a release.
 
 ## Audited analysis files
 
