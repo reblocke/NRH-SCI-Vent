@@ -9,7 +9,7 @@ This repository contains Stata code to reproduce the analyses and figures for ve
 - Public documentation should link to the final article DOI and repository release metadata rather than copying publisher-formatted article text.
 
 ## How to orient quickly
-- Start with `README.md` for citation, data-access, workflow, and paper-to-code mapping.
+- Use `README.md` when the task needs citation, data-access, workflow, or paper-to-code mapping; consult the other entries below only for the affected surface.
 - Use `llms.txt` for the shortest machine-readable project summary.
 - Use `CITATION.cff` for citation metadata.
 - Use `data_dictionary.md` or `data_dictionary.csv` for expected private inputs, key variables, derived outcomes, and generated output artifacts.
@@ -68,6 +68,8 @@ Restricted canonical runs write generated artifacts to one unique `Results and F
   development contracts, dependency hashes, provenance, and licenses.
 
 ## Verification before publishing changes
+For documentation-only edits, check affected references, citation metadata if changed, and `git diff --check`. For runner, contract, mapping, or dependency changes, select the applicable checks below. A licensed Stata runtime is required for executable Stata verification; approved restricted inputs are additionally required for `full`/`release`. Report unavailable gates without substituting a synthetic cohort.
+
 - Run `git diff --check`.
 - Validate `CITATION.cff` as YAML after citation edits.
 - Search for hard-coded local absolute paths before publishing.
